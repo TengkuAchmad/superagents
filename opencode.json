@@ -1,0 +1,53 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "oh-my-openagent@latest"
+  ],
+  "mcp": {
+    "memory": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-memory"],
+      "enabled": true,
+      "environment": {
+        "MEMORY_FILE_PATH": "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agent-data\\memory.jsonl"
+      }
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\INTEL INSIDE\\OneDrive\\Dokumen",
+        "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agent-data",
+        "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agents",
+        "C:\\Users\\INTEL INSIDE\\.config\\opencode"
+      ],
+      "enabled": true
+    },
+    "sqlite": {
+      "type": "local",
+      "command": [
+        "uvx", "mcp-server-sqlite",
+        "--db-path", "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agent-data\\agent.db"
+      ],
+      "enabled": true
+    },
+    "sequential-thinking": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "enabled": true
+    },
+    "vector-memory": {
+      "type": "local",
+      "command": [
+        "uvx", "chroma-mcp",
+        "--client-type", "persistent",
+        "--data-dir", "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agent-data\\vector-store"
+      ],
+      "enabled": true
+    }
+  },
+  "experimental": {
+    "preemptive_compaction_threshold": 0.75,
+    "dcp_for_compaction": true
+  }
+}

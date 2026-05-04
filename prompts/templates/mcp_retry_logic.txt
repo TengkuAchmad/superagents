@@ -1,0 +1,82 @@
+# MCP Retry Logic Template
+# Used by: ALL agents when calling MCP tools
+# Purpose: Gracefully handle MCP connection failures with exponential backoff
+
+## Retry Policy (MANDATORY for all MCP operations)
+
+When calling ANY MCP tool (`memory`, `sqlite`, `filesystem`, `vector-memory`, `sequential-thinking`):
+
+### 1. Initial Attempt
+Try the operation normally.
+
+### 2. On Failure
+If the tool fails with connection/timeout error:
+- **Do NOT fail the entire task**
+- Log the failure: `MCP tool <name> failed: <error>`
+- Wait before retry
+
+### 3. Retry Schedule (Exponential Backoff)
+```
+Attempt 1: immediate
+Attempt 2: wait 2 seconds
+Attempt 3: wait 5 seconds
+Attempt 4: wait 10 seconds
+Max attempts: 4
+```
+
+### 4. Graceful Degradation
+If all retries fail:
+- **Memory/Vector tools**: Continue without memory context, log warning
+- **SQLite logging**: Buffer log entry in session-buffer.json, log warning
+- **Filesystem**: Report error to user, cannot continue
+- **Sequential-thinking**: Fall back to simple reasoning, log warning
+
+### 5. User Communication
+If MCP failure affects the response:
+```
+⚠️ Note: <tool_name> temporarily unavailable. Proceeding without <feature>.
+Result may be less accurate. Retrying automatically in background.
+```
+
+## Example Retry Pattern (Pseudo-code)
+
+```python
+def call_mcp_tool_with_retry(tool_name, operation, max_attempts=4):
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return mcp_tool.call(operation)
+        except ConnectionError as e:
+            if attempt < max_attempts:
+                wait_seconds = [0, 2, 5, 10][attempt]
+                log(f"MCP {tool_name} failed (attempt {attempt}/{max_attempts}), retrying in {wait_seconds}s...")
+                sleep(wait_seconds)
+            else:
+                log(f"MCP {tool_name} failed after {max_attempts} attempts, degrading gracefully")
+                return None  # Graceful degradation
+```
+
+## Critical Rules
+1. **Never fail fast on MCP errors** — always retry first
+2. **Always log retry attempts** — helps debug connection issues
+3. **Degrade gracefully** — partial success > complete failure
+4. **Inform the user** — if MCP unavailability affects quality, say so
+5. **Buffer critical logs** — if SQLite is down, write to session-buffer.json instead
+
+## Connection Health Check (Prabowo only)
+On startup, Prabowo should ping all MCP tools and report status:
+```
+✓ memory Connected
+✓ filesystem Connected
+✓ sqlite Connected
+⚠ vector-memory Slow (30s timeout) — retrying in background
+✓ sequential-thinking Connected
+```
+
+If critical tools fail (filesystem, sqlite), warn user:
+```
+⚠️ Cabinet initialization warning:
+- filesystem: unavailable (file operations will fail)
+- sqlite: unavailable (audit logging disabled)
+
+Recommendation: Restart OpenCode or check MCP server logs.
+```

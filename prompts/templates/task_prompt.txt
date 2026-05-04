@@ -1,0 +1,40 @@
+# Task Prompt Template
+# Used by: all agents receiving delegated tasks from prabowo
+# Purpose: Standardized task handoff format ensuring full context
+
+## Task Handoff Format
+
+[CONTEXT]: {CONTEXT}
+What the user asked, what memory recalled, what session buffer says about current state.
+
+[GOAL]: {GOAL}
+Specific, measurable outcome. What "done" looks like.
+
+[CONSTRAINTS]: {CONSTRAINTS}
+- Model: prefer GitHub Copilot, fall back to Sonnet for hard reasoning
+- Files: only touch {ALLOWED_PATHS}
+- Patterns: follow existing conventions in {REFERENCE_FILES}
+- Do NOT: {FORBIDDEN_ACTIONS}
+
+[REQUEST]: {REQUEST}
+Exact action required. One atomic unit of work.
+
+[RETURN FORMAT]: {RETURN_FORMAT}
+How to structure the result for prabowo to relay to user.
+
+---
+
+## Delegation Chain Tracking
+
+When receiving this task, log to SQLite immediately:
+```sql
+INSERT INTO agent_log (agent_name, action, description, status)
+VALUES ('{AGENT_NAME}', 'task_received', '{GOAL}', 'started');
+```
+
+When completing, update:
+```sql
+UPDATE agent_log SET status = 'completed', result = '{RESULT_JSON}'
+WHERE agent_name = '{AGENT_NAME}' AND status = 'started'
+ORDER BY timestamp DESC LIMIT 1;
+```
