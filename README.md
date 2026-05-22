@@ -72,7 +72,7 @@ orchestrator  (primary — single entry point, routes ALL requests)
 
 - **Cabinet-style multi-agent hierarchy** — strict role separation, all work delegated through the orchestrator
 - **claude-mem as primary memory layer** — persistent cross-session knowledge, few-shot routing, knowledge corpora
-- **Token-efficient file reading** — 7-step tool ladder (smart_search → semantic-cache → read) saves 80-98% tokens
+- **Token-efficient file reading** — 7-step tool ladder (smart_search → distill → read) saves 80-98% tokens
 - **Self-learning routing** — every outcome is stored as a tagged observation; future requests use it as routing hints
 - **Full audit trail** — every agent action, tool call, and memory update logged to SQLite
 - **Three-tier memory** — short-term session buffer, long-term claude-mem observations, semantic vector store
@@ -100,9 +100,9 @@ orchestrator  (primary — single entry point, routes ALL requests)
 | MCP | Purpose | Install |
 |---|---|---|
 | `shadcn` | shadcn/ui component registry, docs, and code examples | Auto via `npx shadcn@latest mcp` |
-| `semantic-cache` | Diff-mode file cache — unchanged files cost 0 tokens on re-read | `pip install semantic-cache-mcp` |
+| `distill` | Token compression — auto-optimize code, logs, diffs, configs | Auto via `opencode` |
 
-**Total active MCPs: 7**
+**Total active MCPs: 6**
 
 ---
 
@@ -112,9 +112,8 @@ orchestrator  (primary — single entry point, routes ALL requests)
 |---|---|---|
 | [OpenCode CLI](https://opencode.ai) | latest | Runtime host |
 | Node.js | 18.x or higher | npm, npx, dashboard |
-| Python | 3.9+ | `semantic-cache-mcp`, uvx-based MCPs |
-| `pip` | any recent | Install `semantic-cache-mcp` |
-| `uvx` | any recent | SQLite and ChromaDB MCP servers |
+| Python | 3.9+ | uvx-based MCPs (optional) |
+| `uvx` | any recent | SQLite and ChromaDB MCP servers (optional) |
 | GitHub Copilot | active subscription | Model access (gpt-4.1, claude-sonnet-4.6) |
 
 ---
@@ -155,17 +154,14 @@ npm install
 cd ..
 ```
 
-### Step 5 — Install Python MCP dependencies
+### Step 5 — Install Python MCP dependencies (Optional)
 
 ```bash
-# Install uv/uvx (used for SQLite and ChromaDB MCP servers)
+# Install uv/uvx (optional, used for SQLite and ChromaDB MCP servers)
 pip install uv
-
-# Install semantic-cache MCP (token-efficient file caching)
-pip install semantic-cache-mcp
 ```
 
-> Note: `semantic-cache-mcp` downloads ONNX embedding models on first install (~500 MB). This is a one-time download.
+> Note: Python dependencies are optional. Core functionality uses built-in distill token compression.
 
 ### Step 6 — Verify all external dependencies
 
@@ -173,19 +169,16 @@ pip install semantic-cache-mcp
 # OpenCode
 opencode --version
 
-# uvx (for SQLite and ChromaDB MCPs)
-uvx --version
-
 # npx (for shadcn MCP)
 npx --version
 
-# Python (for semantic-cache MCP)
+# Python (optional, for uvx-based MCPs)
 python --version
 ```
 
 ### Step 7 — Configure paths in `opencode.json`
 
-Open `opencode.json` and verify the MCP server configuration matches your environment. The `shadcn` MCP auto-resolves via `npx` — no path changes needed. The `semantic-cache` MCP auto-resolves via Python — no path changes needed.
+Open `opencode.json` and verify the MCP server configuration matches your environment. The `shadcn` and `distill` MCPs auto-resolve — no path changes needed.
 
 If you use SQLite or ChromaDB MCPs, update their `--db-path` and `--data-dir` arguments to absolute paths on your machine.
 
@@ -224,11 +217,6 @@ Primary config. Defines the active plugin and all manually-configured MCP server
     "shadcn": {
       "command": "npx",
       "args": ["shadcn@latest", "mcp"]
-    },
-
-    "semantic-cache": {
-      "command": "python",
-      "args": ["-m", "semantic_cache_mcp"]
     }
   },
   "experimental": {
@@ -251,7 +239,7 @@ Defines all agent identities, assigned models, fallback models, and `prompt_appe
 Full agent behavior specs. Each file defines:
 - Role boundary (what the agent must and must not do)
 - Step-by-step workflow
-- MCP tool usage (claude-mem, semantic-cache, shadcn, etc.)
+- MCP tool usage (claude-mem, distill, shadcn, etc.)
 - Logging protocol (SQLite + claude-mem dual-layer)
 - Output format
 
@@ -398,20 +386,6 @@ API endpoints available at `http://localhost:3001`:
 ---
 
 ## Troubleshooting
-
-### `semantic-cache-mcp` install times out
-
-The package downloads ONNX embedding models on first install. Use a longer timeout:
-
-```bash
-pip install semantic-cache-mcp --timeout 300
-```
-
-Or install with `uv` for faster resolution:
-
-```bash
-uv pip install semantic-cache-mcp
-```
 
 ### shadcn MCP not connecting
 
