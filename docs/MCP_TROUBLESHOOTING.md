@@ -58,7 +58,7 @@ All agents now automatically retry MCP operations with exponential backoff:
 
 You'll see warnings like:
 ```
-⚠️ Note: vector-memory temporarily unavailable. Proceeding without semantic search.
+⚠️ Note: vector-memory temporarily unavailable. Proceeding without semantic memory.
 ```
 
 This ensures the system never crashes due to MCP timeouts.

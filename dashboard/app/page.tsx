@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import {
   Monitor,
   Bot,
@@ -19,10 +19,14 @@ import {
   Cpu,
   XCircle,
   TrendingUp,
+  Network,
   Trash2,
+  Users,
+  Check,
   type LucideIcon,
 } from 'lucide-react';
 
+import { AgentGraphPanel } from '@/components/AgentGraphPanel';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,6 +108,16 @@ interface MemoryGraph {
   entity_types: { type: string; count: number }[];
 }
 
+interface Observation {
+  id: string;
+  created_at: string;
+  document: string;
+  type: string | null;
+  category: string | null;
+  project_id: string | null;
+  tags: string | null;
+}
+
 interface AnalyticsStats {
   agents: { count: number };
   actions: { total: number; completed: number; failed: number; last24h: number };
@@ -130,7 +144,7 @@ interface MemoryBreakdown {
   recent: MemoryUpdate[];
 }
 
-type Tab = 'overview' | 'agent-log' | 'tool-calls' | 'memory' | 'planning' | 'projects';
+type Tab = 'overview' | 'agent-log' | 'tool-calls' | 'memory' | 'planning' | 'projects' | 'agents' | 'graph';
 
 interface MCPStatus {
   name: string;
@@ -151,7 +165,134 @@ const AGENT_ICON_MAP: Record<string, LucideIcon> = {
   bakom: FolderOpen,
   'andi-arief': Database,
   'sri-mulyani': BookOpen,
+  explore: Bot,
+  'multimodal-looker': Bot,
 };
+
+const DEFAULT_AGENT_NAMES: Record<string, string> = {
+  prabowo: 'Orchestrator',
+  gibran: 'Planner',
+  suharso: 'Executor',
+  dudung: 'Task Runner',
+  mahfud: 'Oracle',
+  'hasan-nasbi': 'Memory Keeper',
+  'andi-arief': 'Chronicler',
+  bakom: 'Librarian',
+  'sri-mulyani': 'Analyst',
+  explore: 'Explorer',
+  'multimodal-looker': 'Media Analyst',
+};
+
+interface AgentMeta {
+  internalKey: string;
+  role: string;
+  description: string;
+  skills: string[];
+  model: string;
+  fallback: string;
+}
+
+const AGENT_METADATA: Record<string, AgentMeta> = {
+  prabowo: {
+    internalKey: 'atlas',
+    role: 'Orchestrator',
+    description: 'Single entry point for ALL requests. Never answers directly — classifies then routes each task to the right specialist. Uses past success patterns from memory to pick the optimal agent. Escalates failures up the chain.',
+    skills: ['routing', 'delegation', 'memory search', 'failure escalation', 'activity logging'],
+    model: 'GPT-4.1',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  gibran: {
+    internalKey: 'prometheus',
+    role: 'Planner',
+    description: 'Breaks complex tasks into ordered, unambiguous steps via sequential thinking. Retrieves lessons from previous plans before decomposing, then delegates each step to the Executor.',
+    skills: ['sequential thinking', 'task decomposition', 'lesson retrieval', 'workflow planning'],
+    model: 'GPT-4.1',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  suharso: {
+    internalKey: 'sisyphus',
+    role: 'Executor',
+    description: 'Implements planned actions with precision. Checks prior failed attempts before starting, logs each significant tool call to the dashboard, and tags outcomes for the few-shot learning library.',
+    skills: ['code editing', 'file ops', 'bash', 'tool logging', 'outcome tagging'],
+    model: 'GPT-4.1',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  dudung: {
+    internalKey: 'sisyphus-junior',
+    role: 'Task Runner',
+    description: 'Handles ONE focused task at a time — fast, direct, no preamble. Picks the right tool immediately and tries one alternative before reporting failure. Never scope-creeps.',
+    skills: ['bash', 'web search', 'file read', 'grep', 'glob'],
+    model: 'GPT-4.1 Mini',
+    fallback: 'GPT-4.1',
+  },
+  mahfud: {
+    internalKey: 'oracle',
+    role: 'Oracle',
+    description: 'Read-only analyst and decision engine. Standard mode: structured recommendations with tradeoffs, risks, and next steps. Retrospective mode: produces structured lessons tagged for the institutional memory library.',
+    skills: ['reasoning', 'risk analysis', 'retrospectives', 'lesson generation', 'sequential thinking'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
+  },
+  'hasan-nasbi': {
+    internalKey: 'metis',
+    role: 'Memory Keeper',
+    description: 'Custodian of institutional knowledge. Searches with multiple keyword angles, stores observations with full context, and synthesizes coherent summaries without fabricating missing data.',
+    skills: ['memory search', 'observation storage', 'context synthesis', 'deduplication'],
+    model: 'GPT-4.1',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  'andi-arief': {
+    internalKey: 'momus',
+    role: 'Chronicler',
+    description: 'Captures and preserves structured session summaries — agents involved, tasks, decisions, tools, outcomes, unresolved issues. Append-only: never overwrites prior observations.',
+    skills: ['session logging', 'chronicle keeping', 'memory append', 'structured summaries'],
+    model: 'GPT-4.1',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  bakom: {
+    internalKey: 'librarian',
+    role: 'Librarian',
+    description: 'Retrieves documentation, external references, and file system content. Checks the memory cache first before fetching externally, then stores key findings for future reuse.',
+    skills: ['web search', 'documentation lookup', 'file retrieval', 'external knowledge'],
+    model: 'GPT-4.1 Mini',
+    fallback: 'GPT-4.1',
+  },
+  explore: {
+    internalKey: 'explore',
+    role: 'Explorer',
+    description: 'Exhaustively searches codebases and GitHub using multiple search strategies. Checks memory before searching to avoid redundant work, saves significant findings for others to recall.',
+    skills: ['grep', 'glob', 'ast-grep', 'codebase search', 'multi-angle search'],
+    model: 'GPT-4.1 Mini',
+    fallback: 'GPT-4.1',
+  },
+  'multimodal-looker': {
+    internalKey: 'multimodal-looker',
+    role: 'Media Analyst',
+    description: 'Analyzes images, PDFs, and documents thoroughly. Stores extracted key information in memory so the team can reference it without re-analyzing the same file.',
+    skills: ['image analysis', 'PDF reading', 'document extraction', 'structured reports'],
+    model: 'GPT-4.1 Mini',
+    fallback: 'GPT-4.1',
+  },
+};
+
+function resolveAgentName(raw: string | null | undefined, names: Record<string, string>): string {
+  if (!raw) return '—';
+  const normalized = raw.toLowerCase();
+  // 1. Direct DB-key match (prabowo, gibran, …)
+  const keyMatch = Object.keys(names).find((k) => normalized.includes(k));
+  if (keyMatch) return names[keyMatch];
+  // 2. Internal OpenCode agent-key match (atlas, prometheus, sisyphus, …)
+  const internalMatch = Object.keys(AGENT_METADATA).find(
+    (k) => normalized.includes(AGENT_METADATA[k].internalKey),
+  );
+  if (internalMatch) return names[internalMatch] ?? AGENT_METADATA[internalMatch].role;
+  // 3. Role-name match for new-style logs (orchestrator, planner, executor, …)
+  const roleMatch = Object.keys(AGENT_METADATA).find(
+    (k) => normalized.includes(AGENT_METADATA[k].role.toLowerCase()),
+  );
+  if (roleMatch) return names[roleMatch] ?? AGENT_METADATA[roleMatch].role;
+  return raw;
+}
 
 function AgentIcon({ name, className }: Readonly<{ name: string; className?: string }>) {
   const key = Object.keys(AGENT_ICON_MAP).find((k) =>
@@ -236,8 +377,8 @@ function BreakdownBar({ label, value, max, className }: Readonly<{ label: string
 
 // ── Overview Tab ──────────────────────────────────────────────────────────────
 function OverviewTab({
-  logs, stats,
-}: Readonly<{ logs: AgentLog[]; stats: AnalyticsStats | null }>) {
+  logs, stats, agentNames,
+}: Readonly<{ logs: AgentLog[]; stats: AnalyticsStats | null; agentNames: Record<string, string> }>) {
   const agents = Array.from(new Set(logs.map((l) => l.agent_name)));
   const latest = logs[0];
 
@@ -272,7 +413,7 @@ function OverviewTab({
               <AgentIcon name={latest.agent_name} className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div className="latest-body">
                 <div className="latest-meta">
-                  <span className="latest-name">{latest.agent_name}</span>
+                  <span className="latest-name">{resolveAgentName(latest.agent_name, agentNames)}</span>
                   <Badge>{latest.action}</Badge>
                   <StatusBadge status={latest.status} />
                   <span className="latest-time">{relativeTime(latest.timestamp)}</span>
@@ -292,7 +433,10 @@ function OverviewTab({
               <CardContent className="p-4 flex items-start gap-3">
                 <AgentIcon name={name} className="w-5 h-5 text-muted-foreground mt-0.5" />
                 <div className="agent-info">
-                  <p className="agent-name">{name}</p>
+                  <p className="agent-name">{resolveAgentName(name, agentNames)}</p>
+                  {AGENT_METADATA[name] && (
+                    <p className="text-[10px] text-muted-foreground leading-none mb-0.5">{AGENT_METADATA[name].role}</p>
+                  )}
                   <p className="agent-count">{total} action{total === 1 ? '' : 's'}</p>
                   {last && (
                     <p className="agent-last">
@@ -453,15 +597,98 @@ function KnowledgeGraphSection({ graph }: Readonly<{ graph: MemoryGraph | null }
   );
 }
 
+// ── Observations Section (claude-mem) ────────────────────────────────────────
+function ObservationsSection({ observations }: Readonly<{ observations: Observation[] }>) {
+  const [filter, setFilter] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const filtered = filter
+    ? observations.filter(
+        (o) =>
+          o.document?.toLowerCase().includes(filter.toLowerCase()) ||
+          o.type?.toLowerCase().includes(filter.toLowerCase()) ||
+          o.tags?.toLowerCase().includes(filter.toLowerCase()),
+      )
+    : observations;
+
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  return (
+    <div className="space-y-3">
+      <div className="stat-grid">
+        <StatCard label="Observations" value={observations.length} sub="stored in claude-mem" />
+        <StatCard
+          label="Types"
+          value={Array.from(new Set(observations.map((o) => o.type).filter(Boolean))).length}
+        />
+        <StatCard
+          label="Projects"
+          value={Array.from(new Set(observations.map((o) => o.project_id).filter(Boolean))).length}
+        />
+        <StatCard
+          label="Latest"
+          value={observations[0] ? relativeTime(observations[0].created_at) : '—'}
+        />
+      </div>
+      <Input
+        placeholder="Filter observations by content, type, or tags..."
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+      />
+      {filtered.length === 0 && <div className="empty">No observations found.</div>}
+      {filtered.map((obs) => (
+        <Card key={obs.id}>
+          <CardContent
+            className="p-4 cursor-pointer select-none"
+            onClick={() => toggle(obs.id)}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <Brain size={13} className="text-muted-foreground shrink-0" />
+                {obs.type && <Badge variant="warning">{obs.type}</Badge>}
+                {obs.category && <Badge variant="blue">{obs.category}</Badge>}
+                {obs.project_id && (
+                  <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                    {obs.project_id}
+                  </span>
+                )}
+                <span className="text-[11px] text-muted-foreground">{relativeTime(obs.created_at)}</span>
+              </div>
+              <span className="text-muted-foreground text-xs shrink-0">
+                {expanded.has(obs.id) ? '▲' : '▼'}
+              </span>
+            </div>
+            <p className={cn(
+              'mt-2 text-[12px] text-muted-foreground leading-relaxed',
+              !expanded.has(obs.id) && 'line-clamp-2',
+            )}>
+              {obs.document}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 // ── Memory Tab ────────────────────────────────────────────────────────────────
 function MemoryTab({
   breakdown,
   graph,
+  observations,
   onDeleteRecord,
+  agentNames,
 }: Readonly<{
   breakdown: MemoryBreakdown | null;
   graph: MemoryGraph | null;
+  observations: Observation[];
   onDeleteRecord: (id: number) => void;
+  agentNames: Record<string, string>;
 }>) {
   const [filter, setFilter] = useState('');
 
@@ -499,6 +726,19 @@ function MemoryTab({
         )}
       </div>
 
+      {/* ── Claude-Mem Observations ── */}
+      <div>
+        <p className="agent-grid-title flex items-center gap-2">
+          <Database size={13} className="text-muted-foreground" />
+          Claude-Mem Observations <span className="text-muted-foreground font-normal">(vector store)</span>
+        </p>
+        {observations.length === 0 ? (
+          <div className="empty">No claude-mem observations yet. Agents will save observations here as they work.</div>
+        ) : (
+          <ObservationsSection observations={observations} />
+        )}
+      </div>
+
       {/* ── Memory Updates (SQLite) ── */}
       <div className="breakdown-grid">
         <Card>
@@ -527,7 +767,7 @@ function MemoryTab({
               : byAgent.map((a) => (
                 <BreakdownBar
                   key={a.source_agent}
-                  label={a.source_agent}
+                  label={resolveAgentName(a.source_agent, agentNames)}
                   value={a.count}
                   max={maxAgent}
                   className="bg-[hsl(var(--primary))]"
@@ -591,7 +831,7 @@ function MemoryTab({
                     {r.source_agent ? (
                       <span className="inline-flex items-center gap-1.5">
                         <AgentIcon name={r.source_agent} className="w-3.5 h-3.5 text-muted-foreground" />
-                        {r.source_agent}
+                        {resolveAgentName(r.source_agent, agentNames)}
                       </span>
                     ) : '—'}
                   </td>
@@ -615,7 +855,7 @@ function MemoryTab({
 }
 
 // ── Agent Log Tab ───────────────────────────────────────────────────────────────
-function AgentLogTab({ logs, onDeleteRecord }: Readonly<{ logs: AgentLog[]; onDeleteRecord: (id: number) => void }>) {
+function AgentLogTab({ logs, onDeleteRecord, agentNames }: Readonly<{ logs: AgentLog[]; onDeleteRecord: (id: number) => void; agentNames: Record<string, string> }>) {
   const [filter, setFilter] = useState('');
   const filtered = filter
     ? logs.filter(
@@ -660,7 +900,7 @@ function AgentLogTab({ logs, onDeleteRecord }: Readonly<{ logs: AgentLog[]; onDe
                     {log.agent_name ? (
                       <span className="inline-flex items-center gap-1.5">
                         <AgentIcon name={log.agent_name} className="w-3.5 h-3.5 text-muted-foreground" />
-                        {log.agent_name}
+                        {resolveAgentName(log.agent_name, agentNames)}
                       </span>
                     ) : '—'}
                   </td>
@@ -687,7 +927,7 @@ function AgentLogTab({ logs, onDeleteRecord }: Readonly<{ logs: AgentLog[]; onDe
 }
 
 // ── Tool Calls Tab ──────────────────────────────────────────────────────────────
-function ToolCallsTab({ breakdown, onDeleteRecord }: Readonly<{ breakdown: ToolBreakdown | null; onDeleteRecord: (id: number) => void }>) {
+function ToolCallsTab({ breakdown, onDeleteRecord, agentNames }: Readonly<{ breakdown: ToolBreakdown | null; onDeleteRecord: (id: number) => void; agentNames: Record<string, string> }>) {
   const [filter, setFilter] = useState('');
 
   if (!breakdown) return <div className="empty">Loading tool analytics…</div>;
@@ -745,7 +985,7 @@ function ToolCallsTab({ breakdown, onDeleteRecord }: Readonly<{ breakdown: ToolB
               : byAgent.map((a) => (
                 <BreakdownBar
                   key={a.agent_name}
-                  label={a.agent_name}
+                  label={resolveAgentName(a.agent_name, agentNames)}
                   value={a.total}
                   max={maxAgent}
                   className="bg-[hsl(var(--primary))]"
@@ -804,7 +1044,7 @@ function ToolCallsTab({ breakdown, onDeleteRecord }: Readonly<{ breakdown: ToolB
                     {r.agent_name ? (
                       <span className="inline-flex items-center gap-1.5">
                         <AgentIcon name={r.agent_name} className="w-3.5 h-3.5 text-muted-foreground" />
-                        {r.agent_name}
+                        {resolveAgentName(r.agent_name, agentNames)}
                       </span>
                     ) : '—'}
                   </td>
@@ -907,6 +1147,129 @@ function ProjectsTab({ projects }: Readonly<{ projects: ProjectRegistry[] }>) {
   );
 }
 
+// ── Agents Tab ────────────────────────────────────────────────────────────────
+function AgentsTab({
+  names,
+  onRename,
+}: Readonly<{
+  names: Record<string, string>;
+  onRename: (updated: Record<string, string>) => Promise<void>;
+}>) {
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => ({ ...names }));
+  const [saving, setSaving] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
+
+  const save = async (key: string) => {
+    setSaving(key);
+    await onRename({ ...names, [key]: drafts[key] ?? names[key] });
+    setSaving(null);
+    setConfirmed((p) => new Set(p).add(key));
+    setTimeout(() => setConfirmed((p) => { const n = new Set(p); n.delete(key); return n; }), 2000);
+  };
+
+  const reset = (key: string) => {
+    setDrafts((p) => ({ ...p, [key]: DEFAULT_AGENT_NAMES[key] ?? key }));
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[12px] text-muted-foreground mb-1">
+        Cabinet roster — {Object.keys(names).length} agents. Rename display labels below; internal keys are unchanged.
+      </p>
+      {Object.entries(names).map(([key, display]) => {
+        const meta = AGENT_METADATA[key];
+        const currentName = drafts[key] ?? display;
+        let saveLabel: ReactNode = 'Save';
+        if (saving === key) {
+          saveLabel = <Loader2 size={11} className="animate-spin" />;
+        } else if (confirmed.has(key)) {
+          saveLabel = <Check size={11} className="text-[hsl(var(--success))]" />;
+        }
+
+        return (
+          <Card key={key}>
+            <CardContent className="p-5 space-y-3">
+
+              {/* ── Identity row ── */}
+              <div className="flex items-start gap-3">
+                <AgentIcon name={key} className="w-6 h-6 text-[hsl(var(--primary))] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-[14px] leading-none">{currentName}</span>
+                    {meta && (
+                      <Badge variant="warning">{meta.role}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      {meta?.internalKey ?? key}
+                    </span>
+                    {meta && (
+                      <>
+                        <span className="text-[10px] font-mono text-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.08)] px-1.5 py-0.5 rounded border border-[hsl(var(--primary)/0.2)]">
+                          {meta.model}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          ↳ {meta.fallback}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Description ── */}
+              {meta && (
+                <p className="text-[12px] text-muted-foreground leading-relaxed pl-9 border-l-2 border-[hsl(var(--border))] ml-1">
+                  {meta.description}
+                </p>
+              )}
+
+              {/* ── Skills ── */}
+              {meta && meta.skills.length > 0 && (
+                <div className="pl-9 space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Skills</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {meta.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[hsl(var(--primary)/0.08)] text-[hsl(var(--primary))] border border-[hsl(var(--primary)/0.15)]"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Rename row ── */}
+              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-[hsl(var(--border))]">
+                <span className="text-[11px] text-muted-foreground shrink-0">Display name</span>
+                <Button
+                  variant="outline"
+                  className="h-7 px-2.5 text-[11px] shrink-0 min-w-[52px]"
+                  onClick={() => void save(key)}
+                  disabled={saving === key}
+                >
+                  {saveLabel}
+                </Button>
+                <button
+                  className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
+                  onClick={() => reset(key)}
+                  title="Reset to default"
+                >
+                  Reset
+                </button>
+              </div>
+
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── MCP Health Bar ────────────────────────────────────────────────────────────
 function MCPHealthBar({ mcps }: Readonly<{ mcps: MCPStatus[] }>) {
   if (mcps.length === 0) return null;
@@ -955,14 +1318,16 @@ export default function DashboardPage() {
   const [toolBreakdown, setToolBreakdown] = useState<ToolBreakdown | null>(null);
   const [memoryBreakdown, setMemoryBreakdown] = useState<MemoryBreakdown | null>(null);
   const [memoryGraph, setMemoryGraph] = useState<MemoryGraph | null>(null);
+  const [observations, setObservations] = useState<Observation[]>([]);
   const [mcpHealth, setMcpHealth] = useState<MCPStatus[]>([]);
+  const [agentNames, setAgentNames] = useState<Record<string, string>>(DEFAULT_AGENT_NAMES);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     const projectFilter = selectedProject === 'all' ? '' : `&project_id=${selectedProject}`;
     try {
-      const [al, pl, pr, st, tb, mb, mg, mh] = await Promise.all([
+      const [al, pl, pr, st, tb, mb, mg, mh, an, obs] = await Promise.all([
         fetch(`/api/agent-log?limit=100${projectFilter}`).then((r) => r.json()),
         fetch(`/api/planning-log?limit=100${projectFilter}`).then((r) => r.json()),
         fetch('/api/projects').then((r) => r.json()),
@@ -971,6 +1336,8 @@ export default function DashboardPage() {
         fetch(`/api/analytics/memory-breakdown${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
         fetch(`/api/memory-graph${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
         fetch('/api/mcp-health').then((r) => r.json()),
+        fetch('/api/agent-names').then((r) => r.json()),
+        fetch(`/api/observations?limit=200${projectFilter}`).then((r) => r.json()),
       ]);
       setAgentLogs(al.data ?? []);
       setPlanningLogs(pl.data ?? []);
@@ -980,6 +1347,8 @@ export default function DashboardPage() {
       if (!mb.error) setMemoryBreakdown(mb);
       if (!mg.error) setMemoryGraph(mg);
       if (mh.mcps) setMcpHealth(mh.mcps);
+      if (an.names) setAgentNames(an.names);
+      if (obs.data) setObservations(obs.data as Observation[]);
       setLastRefresh(new Date());
     } catch (e) {
       console.error('Fetch error:', e);
@@ -993,6 +1362,19 @@ export default function DashboardPage() {
     const id = setInterval(fetchAll, 5000);
     return () => clearInterval(id);
   }, [fetchAll]);
+
+  const handleRename = async (updated: Record<string, string>) => {
+    try {
+      await fetch('/api/agent-names', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: updated }),
+      });
+      setAgentNames(updated);
+    } catch (e) {
+      console.error('Rename error:', e);
+    }
+  };
 
   const handleProjectChange = (projectId: string) => {
     setSelectedProject(projectId);
@@ -1055,9 +1437,11 @@ export default function DashboardPage() {
     { id: 'overview', label: 'Overview', icon: BarChart3, count: undefined },
     { id: 'agent-log', label: 'Agent Log', icon: Activity, count: agentLogs.length },
     { id: 'tool-calls', label: 'Tool Calls', icon: Wrench, count: stats?.tools.total },
-    { id: 'memory', label: 'Memory', icon: Brain, count: (stats?.memory.total ?? 0) + (memoryGraph?.total_entities ?? 0) },
+    { id: 'memory', label: 'Memory', icon: Brain, count: (stats?.memory.total ?? 0) + (memoryGraph?.total_entities ?? 0) + observations.length },
     { id: 'planning', label: 'Planning', icon: BookOpen, count: planningLogs.length },
     { id: 'projects', label: 'Projects', icon: FolderOpen, count: projects.length },
+    { id: 'agents', label: 'Agents', icon: Users, count: undefined },
+    { id: 'graph',  label: 'Graph',  icon: Network, count: undefined },
   ];
 
   return (
@@ -1121,7 +1505,7 @@ export default function DashboardPage() {
 
       <div className="tab-content">
         <div id="panel-overview" role="tabpanel" hidden={tab !== 'overview'}>
-          <OverviewTab logs={agentLogs} stats={stats} />
+          <OverviewTab logs={agentLogs} stats={stats} agentNames={agentNames} />
         </div>
         <div id="panel-agent-log" role="tabpanel" hidden={tab !== 'agent-log'}>
           <div className="flex justify-end mb-4">
@@ -1135,7 +1519,7 @@ export default function DashboardPage() {
               Delete All for Project
             </Button>
           </div>
-          <AgentLogTab logs={agentLogs} onDeleteRecord={(id) => handleDeleteRecord('agent-log', id)} />
+          <AgentLogTab logs={agentLogs} onDeleteRecord={(id) => handleDeleteRecord('agent-log', id)} agentNames={agentNames} />
         </div>
         <div id="panel-tool-calls" role="tabpanel" hidden={tab !== 'tool-calls'}>
           <div className="flex justify-end mb-4">
@@ -1149,7 +1533,7 @@ export default function DashboardPage() {
               Delete All for Project
             </Button>
           </div>
-          <ToolCallsTab breakdown={toolBreakdown} onDeleteRecord={(id) => handleDeleteRecord('tool-calls', id)} />
+          <ToolCallsTab breakdown={toolBreakdown} onDeleteRecord={(id) => handleDeleteRecord('tool-calls', id)} agentNames={agentNames} />
         </div>
         <div id="panel-memory" role="tabpanel" hidden={tab !== 'memory'}>
           <div className="flex justify-end mb-4">
@@ -1163,7 +1547,7 @@ export default function DashboardPage() {
               Delete All for Project
             </Button>
           </div>
-          <MemoryTab breakdown={memoryBreakdown} graph={memoryGraph} onDeleteRecord={(id) => handleDeleteRecord('memory', id)} />
+          <MemoryTab breakdown={memoryBreakdown} graph={memoryGraph} observations={observations} onDeleteRecord={(id) => handleDeleteRecord('memory', id)} agentNames={agentNames} />
         </div>
         <div id="panel-planning" role="tabpanel" hidden={tab !== 'planning'}>
           <div className="flex justify-end mb-4">
@@ -1181,6 +1565,12 @@ export default function DashboardPage() {
         </div>
         <div id="panel-projects" role="tabpanel" hidden={tab !== 'projects'}>
           <ProjectsTab projects={projects} />
+        </div>
+        <div id="panel-agents" role="tabpanel" hidden={tab !== 'agents'}>
+          <AgentsTab names={agentNames} onRename={handleRename} />
+        </div>
+        <div id="panel-graph" role="tabpanel" hidden={tab !== 'graph'}>
+          <AgentGraphPanel projectFilter={selectedProject === 'all' ? '' : selectedProject} />
         </div>
       </div>
     </div>
