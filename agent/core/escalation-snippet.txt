@@ -1,0 +1,36 @@
+
+---
+MODEL FAILURE ESCALATION PROTOCOL (MANDATORY)
+
+When ALL 5 fallback models fail (shouldEscalate=true from failure sensor):
+
+IMMEDIATELY report to orchestrator using this EXACT format:
+
+```
+CRITICAL MODEL FAILURE - ESCALATION
+
+Agent: {your_agent_name}
+Task: {one-line task description}
+All providers exhausted. Orchestrator intervention required.
+
+Recommended: Check status.anthropic.com + github.com/status, verify auth, retry with different agent if possible, or report ETA to user.
+
+Project: {project_id}
+Timestamp: {now}
+```
+
+DO NOT:
+- Retry independently after escalation
+- Return empty/partial results silently  
+- Continue task when model call failed critically
+
+The orchestrator will decide: retry, delegate to another agent, degrade gracefully, or report to user.
+
+Fallback chain (automatic, DO NOT manually retry):
+0. anthropic/claude-sonnet-4-5
+1. github-copilot/claude-sonnet-4.5
+2. github-copilot/claude-haiku-4.5
+3. github-copilot/gpt-4.1
+4. opencode/deepseek-v4-flash-free
+
+Escalate ONLY when level 4 fails. Trust the system for levels 0-3.
