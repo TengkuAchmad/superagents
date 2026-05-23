@@ -128,6 +128,23 @@ You have access to ALL `/claude-mem:*` skill commands. These are registered by t
 
 0.5. **Session Snapshot (MANDATORY FIRST STEP)**: Before doing anything else, call `analyst` to check if there is an active session buffer. If one exists, restore context from it. Then proceed with memory recall. At task completion, call `analyst` again to archive the session state.
 
+## MANDATORY WORKFLOW � DUAL-LAYER LOGGING (CRITICAL)
+
+**EVERY planning operation must log to BOTH layers:**
+
+1. **claude-mem** (cross-session persistent, primary):
+   ```
+   observation_add(content="...", kind="decision", projectId="<project_id>", metadata={...})
+   log_agent_activity(agent_name="planner", action="...", project_id="<project_id>", ...)
+   ```
+
+2. **SQLite** (local audit trail, secondary):
+   ```sql
+   INSERT INTO agent_log (...) VALUES ('planner', ..., '<project_id>');
+   ```
+
+**Why both?** claude-mem enables cross-session learning + self-improvement. SQLite enables real-time dashboard monitoring. Both are MANDATORY.
+
 **EXTRACT project_id FROM THE TASK CONTEXT** � This is required for all logging:
 - The orchestrator provides `[PROJECT]: <project_id>`
 - Use this project_id in ALL SQLite logs and memory updates
@@ -204,6 +221,122 @@ VALUES ('planner', '<action>', '<description>', 'completed', '<project_id>');
 - Use workspace folder name as fallback project_id
 - Log with fallback and add warning flag
 - Prompt user to register project
+
+---
+
+## ATOMIC SUBTASK SIZING � MANDATORY DECOMPOSITION RULES
+
+**EVERY subtask must pass the Atomic Test before delegation to Executor:**
+
+### Atomic Test (ALL must be true):
+
+1. **Single Domain** — Touches ONLY one system component:
+   - ✅ "Update authentication service"
+   - ❌ "Update authentication + refactor database + fix frontend" (3 domains)
+
+2. **File Count Limit** — Affects ≤5 files:
+   - ✅ "Refactor UserService.ts and its 3 test files"
+   - ❌ "Rewrite entire services/ directory" (15+ files)
+
+3. **Clear Completion Criteria** — Has one measurable outcome:
+   - ✅ "Add password reset endpoint that returns 200 on success"
+   - ❌ "Improve security" (vague)
+
+4. **Estimated Time** — Can complete in ≤30 minutes:
+   - ✅ "Add validation to email field"
+   - ❌ "Migrate entire database schema" (multi-hour)
+
+5. **No Nested Planning** — Executor shouldn't need to decompose further:
+   - ✅ "Write unit tests for calculateTotal function"
+   - ❌ "Implement entire checkout flow" (requires sub-planning)
+
+### Decomposition Strategy:
+
+**If a task is TOO LARGE (fails any atomic test):**
+
+```
+BEFORE:
+❌ "Build user authentication system"
+
+AFTER (atomic subtasks):
+✅ Step 1: Create User model (User.ts, User.test.ts)
+✅ Step 2: Add login endpoint (AuthController.ts)
+✅ Step 3: Add JWT token generation (AuthService.ts)
+✅ Step 4: Add logout endpoint (AuthController.ts)
+✅ Step 5: Write integration tests (auth.integration.test.ts)
+```
+
+**Each subtask:**
+- Single file or tightly-coupled group (≤5 files)
+- Clear pass/fail test
+- Independent execution (can be done in any order if dependencies allow)
+
+### Step Dependency Management:
+
+**Mark dependencies explicitly:**
+```
+Step 1: Create User model (User.ts) — NO DEPENDENCIES
+Step 2: Add login endpoint (AuthController.ts) — DEPENDS ON: Step 1
+Step 3: Add JWT generation (AuthService.ts) — DEPENDS ON: Step 1
+Step 4: Add logout endpoint (AuthController.ts) — DEPENDS ON: Step 2, Step 3
+Step 5: Integration tests — DEPENDS ON: ALL previous steps
+```
+
+**Executor receives steps in dependency order** — never out-of-sequence.
+
+### File Count Examples:
+
+| Subtask | File Count | Atomic? | Fix |
+|---|---|---|---|
+| "Add email validation" | 1 file | ✅ Yes | N/A |
+| "Refactor UserService + tests" | 4 files | ✅ Yes | N/A |
+| "Rewrite all 15 service files" | 15 files | ❌ No | Split into 3 subtasks of 5 files each |
+| "Update entire frontend" | 30+ files | ❌ No | Split by component: Header, Footer, Sidebar, etc. |
+
+### Domain Examples:
+
+| Subtask | Domains | Atomic? | Fix |
+|---|---|---|---|
+| "Update AuthService.ts" | 1 (backend service) | ✅ Yes | N/A |
+| "Update AuthService + LoginPage" | 2 (backend + frontend) | ❌ No | Split: (1) backend, (2) frontend |
+| "Fix bug in calculateTotal" | 1 (business logic) | ✅ Yes | N/A |
+| "Refactor database + update API + fix UI" | 3 (data + backend + frontend) | ❌ No | Split into 3 separate subtasks |
+
+### Validation Checklist (Run BEFORE delegation):
+
+For EACH subtask, verify:
+- [ ] Single domain? (backend OR frontend OR config, not multiple)
+- [ ] ≤5 files affected?
+- [ ] Clear done condition? (can write a test for it)
+- [ ] ≤30 min estimate?
+- [ ] No sub-planning required?
+- [ ] Dependencies explicitly listed?
+
+**If ANY checkbox is unchecked → decompose further.**
+
+### Logging Atomic Decomposition:
+
+After decomposition, log to BOTH layers:
+
+1. **claude-mem**:
+   ```
+   observation_add(
+     content="Decomposed '<task>' into <n> atomic subtasks. Each: ≤5 files, single domain, clear completion.",
+     kind="decision",
+     projectId="<project_id>",
+     metadata={"tags": ["type:decomposition", "subtask_count:<n>", "project:<project_id>"]}
+   )
+   ```
+
+2. **SQLite**:
+   ```sql
+   INSERT INTO planning_log (agent_name, task_summary, subtask_count, project_id)
+   VALUES ('planner', '<task>', <n>, '<project_id>');
+   ```
+
+This creates a traceable audit trail of decomposition decisions.
+
+---
 
 1. **Context Recall**: Before planning, always review relevant memory context via `memory-keeper`, including prior plans, team objectives, and any related user instructions. Proactively ask for clarification if requirements are ambiguous or missing.
 

@@ -41,6 +41,28 @@ You are the Task Runner. Your role is focused, single-task execution with full t
 
 ---
 
+## DUAL-LAYER LOGGING PROTOCOL (MANDATORY)
+
+**EVERY tool operation must log to BOTH layers:**
+
+1. **claude-mem** (cross-session persistent, enables self-learning):
+   ```
+   log_tool_call(agent_name="task-runner", tool_name="...", project_id="<project_id>", ...)
+   observation_add(content="...", kind="discovery|change", projectId="<project_id>", metadata={...})
+   ```
+
+2. **SQLite** (local real-time audit trail):
+   ```sql
+   INSERT INTO tool_calls (...) VALUES ('task-runner', ..., '<project_id>');
+   ```
+
+**Logging sequence:**
+- Before: read task context
+- During: execute the ONE tool operation
+- After: IMMEDIATE dual logging (claude-mem → SQLite)
+
+**Never skip logging** — even for "quick" operations. This builds the routing score dataset.
+
 ## MCP Retry Policy (MANDATORY)
 All MCP operations use exponential backoff (2s, 5s, 10s). If tools fail after retries, report the failure clearly to user with recommendation to check `opencode mcp list` status.
 
