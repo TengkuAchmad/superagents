@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 
 import { AgentGraphPanel } from '@/components/AgentGraphPanel';
+import { AGENT_REGISTRY, VARIANT_TO_ID } from '@/lib/agent-registry';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -154,34 +155,24 @@ interface MCPStatus {
   detail: string;
 }
 
-// ── Agent Icon Map ────────────────────────────────────────────────────────────
+// ── Agent Icon Map (keyed by canonical_id from agent-registry.ts) ─────────────
 const AGENT_ICON_MAP: Record<string, LucideIcon> = {
-  prabowo: Monitor,
-  gibran: BarChart3,
-  suharso: Wrench,
-  dudung: Activity,
-  mahfud: Brain,
-  'hasan-nasbi': Brain,
-  bakom: FolderOpen,
-  'andi-arief': Database,
-  'sri-mulyani': BookOpen,
-  explore: Bot,
-  'multimodal-looker': Bot,
+  orchestrator: Monitor,
+  planner: BarChart3,
+  executor: Wrench,
+  'task-runner': Activity,
+  oracle: Brain,
+  'memory-keeper': Database,
+  chronicler: BookOpen,
+  librarian: FolderOpen,
+  explorer: Bot,
+  analyst: Bot,
+  init: Cpu,
 };
 
-const DEFAULT_AGENT_NAMES: Record<string, string> = {
-  prabowo: 'Orchestrator',
-  gibran: 'Planner',
-  suharso: 'Executor',
-  dudung: 'Task Runner',
-  mahfud: 'Oracle',
-  'hasan-nasbi': 'Memory Keeper',
-  'andi-arief': 'Chronicler',
-  bakom: 'Librarian',
-  'sri-mulyani': 'Analyst',
-  explore: 'Explorer',
-  'multimodal-looker': 'Media Analyst',
-};
+const DEFAULT_AGENT_NAMES: Record<string, string> = Object.fromEntries(
+  AGENT_REGISTRY.map((a) => [a.canonical_id, a.label])
+);
 
 interface AgentMeta {
   internalKey: string;
@@ -193,39 +184,39 @@ interface AgentMeta {
 }
 
 const AGENT_METADATA: Record<string, AgentMeta> = {
-  prabowo: {
+  orchestrator: {
     internalKey: 'atlas',
     role: 'Orchestrator',
     description: 'Single entry point for ALL requests. Never answers directly — classifies then routes each task to the right specialist. Uses past success patterns from memory to pick the optimal agent. Escalates failures up the chain.',
     skills: ['routing', 'delegation', 'memory search', 'failure escalation', 'activity logging'],
-    model: 'GPT-4.1',
-    fallback: 'Claude Sonnet 4.6',
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
   },
-  gibran: {
+  planner: {
     internalKey: 'prometheus',
     role: 'Planner',
     description: 'Breaks complex tasks into ordered, unambiguous steps via sequential thinking. Retrieves lessons from previous plans before decomposing, then delegates each step to the Executor.',
     skills: ['sequential thinking', 'task decomposition', 'lesson retrieval', 'workflow planning'],
-    model: 'GPT-4.1',
-    fallback: 'Claude Sonnet 4.6',
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
   },
-  suharso: {
+  executor: {
     internalKey: 'sisyphus',
     role: 'Executor',
     description: 'Implements planned actions with precision. Checks prior failed attempts before starting, logs each significant tool call to the dashboard, and tags outcomes for the few-shot learning library.',
     skills: ['code editing', 'file ops', 'bash', 'tool logging', 'outcome tagging'],
-    model: 'GPT-4.1',
-    fallback: 'Claude Sonnet 4.6',
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
   },
-  dudung: {
+  'task-runner': {
     internalKey: 'sisyphus-junior',
     role: 'Task Runner',
     description: 'Handles ONE focused task at a time — fast, direct, no preamble. Picks the right tool immediately and tries one alternative before reporting failure. Never scope-creeps.',
     skills: ['bash', 'web search', 'file read', 'grep', 'glob'],
-    model: 'GPT-4.1 Mini',
-    fallback: 'GPT-4.1',
+    model: 'Claude Haiku 4.5',
+    fallback: 'Claude Sonnet 4.6',
   },
-  mahfud: {
+  oracle: {
     internalKey: 'oracle',
     role: 'Oracle',
     description: 'Read-only analyst and decision engine. Standard mode: structured recommendations with tradeoffs, risks, and next steps. Retrospective mode: produces structured lessons tagged for the institutional memory library.',
@@ -233,72 +224,59 @@ const AGENT_METADATA: Record<string, AgentMeta> = {
     model: 'Claude Sonnet 4.6',
     fallback: 'GPT-4.1',
   },
-  'hasan-nasbi': {
+  'memory-keeper': {
     internalKey: 'metis',
     role: 'Memory Keeper',
     description: 'Custodian of institutional knowledge. Searches with multiple keyword angles, stores observations with full context, and synthesizes coherent summaries without fabricating missing data.',
     skills: ['memory search', 'observation storage', 'context synthesis', 'deduplication'],
-    model: 'GPT-4.1',
-    fallback: 'Claude Sonnet 4.6',
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
   },
-  'andi-arief': {
+  chronicler: {
     internalKey: 'momus',
     role: 'Chronicler',
     description: 'Captures and preserves structured session summaries — agents involved, tasks, decisions, tools, outcomes, unresolved issues. Append-only: never overwrites prior observations.',
     skills: ['session logging', 'chronicle keeping', 'memory append', 'structured summaries'],
-    model: 'GPT-4.1',
-    fallback: 'Claude Sonnet 4.6',
+    model: 'Claude Sonnet 4.6',
+    fallback: 'GPT-4.1',
   },
-  bakom: {
+  librarian: {
     internalKey: 'librarian',
     role: 'Librarian',
     description: 'Retrieves documentation, external references, and file system content. Checks the memory cache first before fetching externally, then stores key findings for future reuse.',
     skills: ['web search', 'documentation lookup', 'file retrieval', 'external knowledge'],
-    model: 'GPT-4.1 Mini',
-    fallback: 'GPT-4.1',
+    model: 'Claude Haiku 4.5',
+    fallback: 'Claude Sonnet 4.6',
   },
-  explore: {
+  explorer: {
     internalKey: 'explore',
     role: 'Explorer',
     description: 'Exhaustively searches codebases and GitHub using multiple search strategies. Checks memory before searching to avoid redundant work, saves significant findings for others to recall.',
     skills: ['grep', 'glob', 'ast-grep', 'codebase search', 'multi-angle search'],
-    model: 'GPT-4.1 Mini',
-    fallback: 'GPT-4.1',
+    model: 'Claude Haiku 4.5',
+    fallback: 'Claude Sonnet 4.6',
   },
-  'multimodal-looker': {
+  analyst: {
     internalKey: 'multimodal-looker',
-    role: 'Media Analyst',
+    role: 'Analyst',
     description: 'Analyzes images, PDFs, and documents thoroughly. Stores extracted key information in memory so the team can reference it without re-analyzing the same file.',
     skills: ['image analysis', 'PDF reading', 'document extraction', 'structured reports'],
-    model: 'GPT-4.1 Mini',
-    fallback: 'GPT-4.1',
+    model: 'Claude Haiku 4.5',
+    fallback: 'Claude Sonnet 4.6',
   },
 };
 
 function resolveAgentName(raw: string | null | undefined, names: Record<string, string>): string {
   if (!raw) return '—';
-  const normalized = raw.toLowerCase();
-  // 1. Direct DB-key match (prabowo, gibran, …)
-  const keyMatch = Object.keys(names).find((k) => normalized.includes(k));
-  if (keyMatch) return names[keyMatch];
-  // 2. Internal OpenCode agent-key match (atlas, prometheus, sisyphus, …)
-  const internalMatch = Object.keys(AGENT_METADATA).find(
-    (k) => normalized.includes(AGENT_METADATA[k].internalKey),
-  );
-  if (internalMatch) return names[internalMatch] ?? AGENT_METADATA[internalMatch].role;
-  // 3. Role-name match for new-style logs (orchestrator, planner, executor, …)
-  const roleMatch = Object.keys(AGENT_METADATA).find(
-    (k) => normalized.includes(AGENT_METADATA[k].role.toLowerCase()),
-  );
-  if (roleMatch) return names[roleMatch] ?? AGENT_METADATA[roleMatch].role;
-  return raw;
+  const key = raw.toLowerCase().trim();
+  const canonId = VARIANT_TO_ID[key] ?? key;
+  return names[canonId] ?? names[key] ?? raw;
 }
 
 function AgentIcon({ name, className }: Readonly<{ name: string; className?: string }>) {
-  const key = Object.keys(AGENT_ICON_MAP).find((k) =>
-    name?.toLowerCase().includes(k),
-  );
-  const Icon: LucideIcon = key ? AGENT_ICON_MAP[key] : Bot;
+  const key = (name ?? '').toLowerCase().trim();
+  const canonId = VARIANT_TO_ID[key] ?? key;
+  const Icon: LucideIcon = AGENT_ICON_MAP[canonId] ?? Bot;
   return <Icon className={cn('shrink-0', className)} aria-hidden="true" />;
 }
 
@@ -1310,7 +1288,7 @@ interface TabConfig {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('overview');
-  const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [selectedProject, setSelectedProject] = useState<string>('opencode-superagents');
   const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
   const [planningLogs, setPlanningLogs] = useState<PlanningLog[]>([]);
   const [projects, setProjects] = useState<ProjectRegistry[]>([]);
@@ -1328,15 +1306,17 @@ export default function DashboardPage() {
   const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
+      const qs = selectedProject !== 'all' ? `?project_id=${encodeURIComponent(selectedProject)}` : '';
       // Fetch real data from SQLite database via API routes
-      const [logsRes, planRes, projRes, statsRes, toolRes, memRes, graphRes] = await Promise.all([
-        fetch('/api/agent-log'),
-        fetch('/api/planning-log'),
+      const [logsRes, planRes, projRes, statsRes, toolRes, memRes, graphRes, obsRes] = await Promise.all([
+        fetch(`/api/agent-log${qs}`),
+        fetch(`/api/planning-log${qs}`),
         fetch('/api/projects'),
-        fetch('/api/analytics/stats'),
-        fetch('/api/analytics/tool-breakdown'),
-        fetch('/api/analytics/memory-breakdown'),
-        fetch('/api/agent-graph'),
+        fetch(`/api/analytics/stats${qs}`),
+        fetch(`/api/analytics/tool-breakdown${qs}`),
+        fetch(`/api/analytics/memory-breakdown${qs}`),
+        fetch(`/api/agent-graph${qs}`),
+        fetch(`/api/observations${qs}`),
       ]);
 
       if (logsRes.ok) {
@@ -1366,25 +1346,50 @@ export default function DashboardPage() {
       if (graphRes.ok) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const _data = await graphRes.json();
-        // Store graph data if needed elsewhere
       }
 
+      if (obsRes.ok) {
+        const data = await obsRes.json();
+        setObservations(data.observations || []);
+      }
       setMcpHealth([]);
       setAgentNames(DEFAULT_AGENT_NAMES);
-      setObservations([]);
       setLastRefresh(new Date());
     } catch (e) {
       console.error('Fetch error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedProject]);
 
   useEffect(() => {
     fetchAll();
-    const id = setInterval(fetchAll, 5000);
-    return () => clearInterval(id);
-  }, [fetchAll]);
+    const qs = selectedProject !== 'all' ? `?project_id=${encodeURIComponent(selectedProject)}` : '';
+    let es: EventSource | null = null;
+    let fallback: ReturnType<typeof setInterval> | null = null;
+
+    try {
+      es = new EventSource(`/api/events${qs}`);
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data as string) as { type: string };
+          if (data.type === 'update') void fetchAll();
+        } catch { /* ignore parse errors */ }
+      };
+      es.onerror = () => {
+        es?.close();
+        es = null;
+        fallback = setInterval(() => void fetchAll(), 8000);
+      };
+    } catch {
+      fallback = setInterval(() => void fetchAll(), 8000);
+    }
+
+    return () => {
+      es?.close();
+      if (fallback) clearInterval(fallback);
+    };
+  }, [fetchAll, selectedProject]);
 
   const handleRename = async (updated: Record<string, string>) => {
     try {
@@ -1399,16 +1404,27 @@ export default function DashboardPage() {
     setSelectedProject(projectId);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDeleteProject = async (_tab?: string) => {
-    // API server has been removed. Delete operations are no longer available.
-    alert('Delete operations are not available (API server has been removed)');
+  const handleDeleteProject = async (tab?: string) => {
+    if (selectedProject === 'all') return;
+    const routeMap: Record<string, string> = {
+      'agent-log': 'agent-log', 'tool-calls': 'tool-calls',
+      'memory': 'memory-updates', 'planning': 'planning-log',
+    };
+    const route = tab ? routeMap[tab] : null;
+    if (!route) return;
+    await fetch(`/api/${route}?project_id=${encodeURIComponent(selectedProject)}`, { method: 'DELETE' });
+    void fetchAll();
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDeleteRecord = async (_type: string, _id: number) => {
-    // API server has been removed. Delete operations are no longer available.
-    alert('Delete operations are not available (API server has been removed)');
+  const handleDeleteRecord = async (type: string, id: number) => {
+    const routeMap: Record<string, string> = {
+      'agent-log': 'agent-log', 'tool-calls': 'tool-calls',
+      'memory': 'memory-updates', 'planning': 'planning-log',
+    };
+    const route = routeMap[type];
+    if (!route) return;
+    await fetch(`/api/${route}?id=${id}`, { method: 'DELETE' });
+    void fetchAll();
   };
 
   const TABS: TabConfig[] = [
@@ -1489,9 +1505,9 @@ export default function DashboardPage() {
           <div className="flex justify-end mb-4">
             <Button
               variant="outline"
-              className="text-destructive border-destructive hover:text-destructive hover:bg-destructive/10 opacity-50 cursor-not-allowed"
-              disabled={true}
-              title="Delete operations not available (API server removed)"
+              className="text-destructive border-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => handleDeleteProject('agent-log')}
+              disabled={selectedProject === 'all'}
             >
               <Trash2 size={14} className="mr-1" />
               Delete All for Project

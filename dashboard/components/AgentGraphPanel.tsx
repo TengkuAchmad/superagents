@@ -19,6 +19,7 @@ import {
   applyEdgeChanges,
   Panel,
 } from '@xyflow/react';
+
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
 
@@ -30,8 +31,11 @@ interface GraphNode {
   role: string;
   status: string;
   action: string;
+  description: string;
   count: number;
   last_seen: string;
+  icon: string;
+  color: string;
 }
 
 interface GraphEdge {
@@ -57,6 +61,7 @@ type AgentNodeData = {
   role: string;
   status: AgentStatus;
   action: string;
+  description: string;
   count: number;
   color: string;
   icon: string;
@@ -67,10 +72,10 @@ type AgentFlowNode = Node<AgentNodeData>;
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<AgentStatus, { border: string; bg: string; glow: string; dot: string; badge: string }> = {
-  started:   { border: '#6366f1', bg: 'rgba(99,102,241,0.10)',  glow: '0 0 22px rgba(99,102,241,0.45)',  dot: '#818cf8', badge: '#4f46e5' },
-  completed: { border: '#10b981', bg: 'rgba(16,185,129,0.08)',  glow: '0 0 14px rgba(16,185,129,0.30)',  dot: '#34d399', badge: '#059669' },
-  failed:    { border: '#ef4444', bg: 'rgba(239,68,68,0.08)',   glow: '0 0 22px rgba(239,68,68,0.40)',   dot: '#f87171', badge: '#dc2626' },
-  idle:      { border: '#1e293b', bg: 'rgba(15,23,42,0.60)',    glow: 'none',                            dot: '#475569', badge: '#334155' },
+  started:   { border: '#27272a', bg: '#09090b', glow: 'none', dot: '#60a5fa', badge: 'rgba(96,165,250,0.12)'  },
+  completed: { border: '#27272a', bg: '#09090b', glow: 'none', dot: '#4ade80', badge: 'rgba(74,222,128,0.12)' },
+  failed:    { border: '#27272a', bg: '#09090b', glow: 'none', dot: '#f87171', badge: 'rgba(248,113,113,0.12)' },
+  idle:      { border: '#27272a', bg: '#09090b', glow: 'none', dot: '#71717a', badge: 'rgba(255,255,255,0.05)' },
 };
 
 const NODE_W = 168;
@@ -100,42 +105,40 @@ function AgentNode({ data }: NodeProps<AgentFlowNode>) {
   const status: AgentStatus = (data.status as AgentStatus) ?? 'idle';
   const sc = STATUS_CFG[status];
   const isActive = status === 'started';
-  const isFailed = status === 'failed';
-  // Icon and color come from the API (registry-driven), fallback to status color
-  const nodeColor = (data.color as string) || sc.border;
 
   return (
     <div
       className={`agn-card agn-card--${status}`}
-      style={{ borderColor: nodeColor, background: sc.bg, boxShadow: `0 0 18px ${sc.glow.replace(sc.border, nodeColor)}` }}
+      style={{ borderColor: 'rgba(255,255,255,0.10)', background: sc.bg, boxShadow: 'none' }}
     >
       <Handle type="target" position={Position.Top} style={{ opacity: 0, pointerEvents: 'none' }} />
 
       {isActive && (
         <>
-          <span className="agn-pulse" style={{ borderColor: nodeColor }} />
-          <span className="agn-pulse agn-pulse--delay" style={{ borderColor: nodeColor }} />
+          <span className="agn-pulse" style={{ borderColor: sc.border }} />
+          <span className="agn-pulse agn-pulse--delay" style={{ borderColor: sc.border }} />
         </>
       )}
 
       <div className="agn-header">
-        <span className="agn-icon">{(data.icon as string) || '🤖'}</span>
         <div className="agn-meta">
-          <span className="agn-name" style={{ color: isActive ? '#c7d2fe' : isFailed ? '#fca5a5' : '#e2e8f0' }}>
-            {data.label as string}
-          </span>
+          <span className="agn-name">{data.label as string}</span>
           <span className="agn-role">{data.role as string}</span>
         </div>
-        <span className="agn-count" style={{ background: sc.badge }}>{data.count as number}</span>
+        <span className="agn-count" style={{ background: sc.badge, color: sc.dot }}>{data.count as number}</span>
       </div>
 
       <div className="agn-footer">
-        <span className="agn-status-dot" style={{ background: sc.dot }} />
-        <span className="agn-status-text">{status}</span>
+        <span className="agn-status-dot" style={{ background: sc.dot, opacity: 0.4 }} />
+        <span className="agn-status-text" style={{ color: sc.dot, opacity: 0.55 }}>{status}</span>
         {data.action && status !== 'idle' && (
           <span className="agn-action">· {data.action as string}</span>
         )}
       </div>
+
+      {data.description && status !== 'idle' && (
+        <div className="agn-desc">{data.description as string}</div>
+      )}
 
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: 'none' }} />
     </div>
@@ -154,15 +157,16 @@ function buildElements(data: GraphData): { nodes: AgentFlowNode[]; edges: Edge[]
     type: 'agentNode',
     position: { x: 0, y: 0 },
     data: {
-      label: n.label,
-      role: n.role,
-      status: (['idle', 'started', 'completed', 'failed'].includes(n.status)
-        ? n.status : 'idle') as AgentStatus,
-      action: n.action ?? '',
-      count: n.count,
-      color: (n as { color?: string }).color ?? '',
-      icon: (n as { icon?: string }).icon ?? '🤖',
-    },
+        label: n.label,
+        role: n.role,
+        status: (['idle', 'started', 'completed', 'failed'].includes(n.status)
+          ? n.status : 'idle') as AgentStatus,
+        action: n.action ?? '',
+        description: n.description ?? '',
+        count: n.count,
+        color: n.color ?? '',
+        icon: n.icon ?? '🤖',
+      },
   }));
 
   const rfEdges: Edge[] = data.edges.map((e) => {
@@ -178,7 +182,7 @@ function buildElements(data: GraphData): { nodes: AgentFlowNode[]; edges: Edge[]
       markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
       style: { stroke: color, strokeWidth: isActive ? 2.5 : 1.5 },
       labelStyle: { fill: '#64748b', fontSize: 10, fontFamily: 'monospace' },
-      labelBgStyle: { fill: 'rgba(10,14,28,0.85)', rx: 3 },
+      labelBgStyle: { fill: 'rgba(0,0,0,0.9)', rx: 3 },
       labelBgPadding: [4, 4] as [number, number],
     };
   });
@@ -275,12 +279,12 @@ export function AgentGraphPanel({ projectFilter = '' }: { projectFilter?: string
           nodesConnectable={false}
           elementsSelectable
         >
-          <Background variant={BackgroundVariant.Dots} color="#1e293b" gap={24} size={1.2} />
+          <Background variant={BackgroundVariant.Dots} color="#1a1a1a" gap={24} size={1.2} />
           <Controls className="agn-controls" showInteractive={false} />
           <MiniMap
             nodeColor={miniMapNodeColor}
             maskColor="rgba(0,0,0,0.75)"
-            style={{ background: 'rgba(8,12,24,0.92)', border: '1px solid #1e293b', borderRadius: 8 }}
+            style={{ background: 'rgba(0,0,0,0.95)', border: '1px solid #27272a', borderRadius: 8 }}
             pannable
             zoomable
           />

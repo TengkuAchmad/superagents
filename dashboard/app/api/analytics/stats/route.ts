@@ -1,88 +1,38 @@
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-interface AgentStats {
-  total: number | null;
-  completed: number | null;
-  failed: number | null;
-  agent_count: number | null;
-  avg_duration_ms: number | null;
-}
+type Row = Record<string, number | null>;
 
-interface CountResult {
-  count: number | null;
-}
-
-interface AgentBreakdownItem {
-  agent_name: string;
-  count: number;
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('project_id') || null;
     const db = getDb(true);
+    const pf = projectId ? 'AND project_id = ?' : '';
+    const a = projectId ? [projectId] : [];
 
-    const stats = db.prepare(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
-        COUNT(DISTINCT agent_name) as agent_count,
-        AVG(CASE WHEN duration_ms IS NOT NULL THEN duration_ms ELSE NULL END) as avg_duration_ms
-      FROM agent_log
-    `).get() as AgentStats;
+    const q = (sql: string): Row => db.prepare(sql).get(...a) as Row;
 
-    const last24h = db.prepare(`
-      SELECT COUNT(*) as count
-      FROM agent_log
-      WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as CountResult;
-
-    const byAgent = db.prepare(`
-      SELECT agent_name, COUNT(*) as count
-      FROM agent_log
-      GROUP BY agent_name
-      ORDER BY count DESC
-      LIMIT 20
-    `).all() as AgentBreakdownItem[];
+    const actRow  = q(`SELECT COUNT(*) AS total, SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS completed, SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) AS failed, COUNT(DISTINCT agent_name) AS agents FROM agent_log WHERE 1=1 ${pf}`);
+    const act24h  = q(`SELECT COUNT(*) AS v FROM agent_log WHERE timestamp > datetime('now','-24 hours') ${pf}`);
+    const toolRow = q(`SELECT COUNT(*) AS total, SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS success, SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) AS failed FROM tool_calls WHERE 1=1 ${pf}`);
+    const tool24h = q(`SELECT COUNT(*) AS v FROM tool_calls WHERE timestamp > datetime('now','-24 hours') ${pf}`);
+    const memRow  = q(`SELECT COUNT(*) AS total, COUNT(DISTINCT entity_name) AS uniq FROM memory_updates WHERE 1=1 ${pf}`);
+    const planRow = q(`SELECT COUNT(*) AS total FROM planning_log WHERE 1=1 ${pf}`);
+    const projRow = (db.prepare(`SELECT COUNT(*) AS total FROM project_registry`).get() as Row);
+    const durRow  = q(`SELECT ROUND(AVG(duration_ms)) AS avg FROM agent_log WHERE duration_ms IS NOT NULL ${pf}`);
 
     return NextResponse.json({
-      actions: {
-        total: stats.total || 0,
-        completed: stats.completed || 0,
-        failed: stats.failed || 0,
-        last24h: last24h.count || 0
-      },
-      agents: {
-        count: stats.agent_count || 0
-      },
-      performance: {
-        avgDurationMs: Math.round(stats.avg_duration_ms || 0)
-      },
-      projects: {
-        total: 0
-      },
-      tools: {
-        total: 0,
-        last24h: 0,
-        failed: 0
-      },
-      memory: {
-        total: 0,
-        uniqueEntities: 0
-      },
-      byAgent
+      agents:      { count: actRow.agents ?? 0 },
+      actions:     { total: actRow.total ?? 0, completed: actRow.completed ?? 0, failed: actRow.failed ?? 0, last24h: act24h.v ?? 0 },
+      tools:       { total: toolRow.total ?? 0, success: toolRow.success ?? 0, failed: toolRow.failed ?? 0, last24h: tool24h.v ?? 0 },
+      memory:      { total: memRow.total ?? 0, uniqueEntities: memRow.uniq ?? 0 },
+      planning:    { total: planRow.total ?? 0 },
+      projects:    { total: projRow.total ?? 0 },
+      performance: { avgDurationMs: durRow.avg ?? null },
     });
   } catch (error) {
-    console.error('Failed to fetch stats:', error);
-    return NextResponse.json({
-      actions: { total: 0, completed: 0, failed: 0, last24h: 0 },
-      agents: { count: 0 },
-      performance: { avgDurationMs: 0 },
-      projects: { total: 0 },
-      tools: { total: 0, last24h: 0, failed: 0 },
-      memory: { total: 0, uniqueEntities: 0 },
-      byAgent: []
-    }, { status: 500 });
+    console.error('analytics/stats error:', error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

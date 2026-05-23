@@ -32,6 +32,7 @@ The system is built on top of [OpenCode](https://opencode.ai) and the [oh-my-ope
 - 7 active MCP servers (memory, token compression, UI registry, docs, search)
 - A Next.js monitoring dashboard
 - Self-learning routing via a few-shot observation library
+- **`opencode-with-claude` plugin** — routes all Claude model calls through your Claude Max subscription via a local Meridian proxy (no API key billing)
 
 ---
 
@@ -111,9 +112,11 @@ orchestrator  (primary — single entry point, routes ALL requests)
 |---|---|---|
 | [OpenCode CLI](https://opencode.ai) | latest | Runtime host |
 | Node.js | 18.x or higher | npm, npx, dashboard |
+| `@anthropic-ai/claude-code` | latest | Claude Code CLI — provides OAuth auth for Claude Max |
+| Claude Max | active subscription | Model access for all Claude agents (via Meridian proxy) |
 | Python | 3.9+ | uvx-based MCPs (optional) |
 | `uvx` | any recent | SQLite and ChromaDB MCP servers (optional) |
-| GitHub Copilot | active subscription | Model access (gpt-4.1, claude-sonnet-4.6) |
+| GitHub Copilot | active subscription | Model access for GPT-4.1 agents (optional if using Claude only) |
 
 ---
 
@@ -153,7 +156,75 @@ npm install
 cd ..
 ```
 
-### Step 5 — Install Python MCP dependencies (Optional)
+### Step 5 — Install Claude Code CLI and opencode-with-claude plugin
+
+```bash
+npm install -g @anthropic-ai/claude-code@latest
+npm install -g opencode-with-claude
+```
+
+Verify:
+```bash
+claude --version
+opencode-with-claude --version
+```
+
+### Step 6 — Authenticate with Claude Max
+
+```bash
+claude login
+```
+
+This opens a browser for OAuth login. An active **Claude Max subscription** is required. Authentication is stored by the Claude Code CLI and reused automatically — no API key needed.
+
+Verify authentication:
+```bash
+claude auth status
+```
+
+### Step 7 — Create Meridian configuration files
+
+Create `~/.config/meridian/settings.json`:
+```json
+{
+  "sdk_features_enabled": true,
+  "client_prompt_passthrough": true
+}
+```
+
+Create `~/.config/meridian/sdk-features.json`:
+```json
+{
+  "opencode": {
+    "memory": true,
+    "thinking": "enabled",
+    "maxBudgetUsd": 0.5
+  }
+}
+```
+
+These enable extended thinking, memory features, and set a $0.50 per-request budget cap.
+
+### Step 8 — Verify `opencode.json` includes both plugins
+
+Confirm `opencode.json` contains:
+```json
+{
+  "plugin": ["oh-my-openagent@latest", "opencode-with-claude"],
+  "provider": {
+    "anthropic": {
+      "options": {
+        "baseURL": "http://127.0.0.1:3456",
+        "apiKey": "dummy"
+      }
+    }
+  }
+}
+```
+
+The `baseURL` points to the local Meridian proxy that `opencode-with-claude` starts automatically. The dummy API key is required by the provider schema but not used — OAuth handles auth.
+
+### Step 9 — Install Python MCP dependencies (Optional)
 
 ```bash
 # Install uv/uvx (optional, used for SQLite and ChromaDB MCP servers)
@@ -162,11 +233,17 @@ pip install uv
 
 > Note: Python dependencies are optional. Core functionality uses built-in distill token compression.
 
-### Step 6 — Verify all external dependencies
+### Step 10 — Verify all external dependencies
 
 ```bash
 # OpenCode
 opencode --version
+
+# Claude Code CLI
+claude --version
+
+# Claude authentication
+claude auth status
 
 # npx (for shadcn MCP)
 npx --version
@@ -175,13 +252,7 @@ npx --version
 python --version
 ```
 
-### Step 7 — Configure paths in `opencode.json`
-
-Open `opencode.json` and verify the MCP server configuration matches your environment. The `shadcn` and `distill` MCPs auto-resolve — no path changes needed.
-
-If you use SQLite or ChromaDB MCPs, update their `--db-path` and `--data-dir` arguments to absolute paths on your machine.
-
-### Step 8 — Initialize agent data directory
+### Step 11 — Initialize agent data directory
 
 The `agent-data/` directory is created automatically on first run. It stores:
 - `agent.db` — SQLite audit database
@@ -190,15 +261,26 @@ The `agent-data/` directory is created automatically on first run. It stores:
 
 No manual setup needed.
 
-### Step 9 — Start the system
+### Step 12 — Start the system
 
 ```powershell
-# Windows (full system — OpenCode + Claude Memory + dashboard)
-.\opencode-start.ps1
+# Full system — OpenCode + Meridian proxy + Claude Memory + dashboard
+oc
 
-# Or launch OpenCode only
-opencode
+# OpenCode + Meridian proxy only (fast startup)
+oc opencode
+
+# Health check — verify all components
+oc status
 ```
+
+The `oc` command is a PowerShell function defined in your profile that wraps `opencode-start.ps1`. On startup you should see:
+
+```
+Claude Max Proxy listening on http://127.0.0.1:3456
+```
+
+This confirms the Meridian proxy is running and Claude Max is connected.
 
 ---
 
@@ -206,24 +288,63 @@ opencode
 
 ### `opencode.json`
 
-Primary config. Defines the active plugin and all manually-configured MCP servers.
+Primary config. Defines active plugins, the Anthropic provider proxy, and manually-configured MCP servers.
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["oh-my-openagent@latest"],
-  "mcpServers": {
-    "shadcn": {
-      "command": "npx",
-      "args": ["shadcn@latest", "mcp"]
+  "plugin": [
+    "oh-my-openagent@latest",
+    "opencode-with-claude"
+  ],
+  "provider": {
+    "anthropic": {
+      "options": {
+        "baseURL": "http://127.0.0.1:3456",
+        "apiKey": "dummy"
+      }
     }
   },
-  "experimental": {
-    "preemptive_compaction_threshold": 0.75,
-    "dcp_for_compaction": true
+  "mcp": {
+    "shadcn": {
+      "type": "local",
+      "command": ["npx", "shadcn@latest", "mcp"]
+    }
   }
 }
 ```
+
+**Key fields:**
+- `plugin[1]` — `opencode-with-claude` starts the Meridian proxy automatically and manages its lifecycle
+- `provider.anthropic.baseURL` — all Claude API calls go to the local proxy instead of api.anthropic.com
+- `apiKey: "dummy"` — required by schema but unused; OAuth from `claude login` handles auth
+
+### `~/.config/meridian/settings.json`
+
+Controls Meridian proxy behavior:
+
+```json
+{
+  "sdk_features_enabled": true,
+  "client_prompt_passthrough": true
+}
+```
+
+### `~/.config/meridian/sdk-features.json`
+
+SDK feature toggles — reloaded per request (no restart needed):
+
+```json
+{
+  "opencode": {
+    "memory": true,
+    "thinking": "enabled",
+    "maxBudgetUsd": 0.5
+  }
+}
+```
+
+Adjust `maxBudgetUsd` to control per-request spending. Set `"thinking": "disabled"` to turn off extended thinking.
 
 ### `oh-my-openagent.json`
 
@@ -268,11 +389,18 @@ The orchestrator auto-detects your working directory, reads `package.json` / `RE
 
 ### Start the agent system
 
-```bash
-opencode
+```powershell
+# Full system (recommended) — OpenCode + Meridian proxy + Claude Memory + dashboard
+oc
+
+# OpenCode + Meridian proxy only (fast, no dashboard)
+oc opencode
+
+# Health check — verify all components before starting
+oc status
 ```
 
-OpenCode loads the plugin, connects all MCP servers, and makes all agents available.
+On startup, watch for `Claude Max Proxy listening on http://127.0.0.1:3456` — this confirms the proxy is running and all Claude agent calls will route through your Claude Max subscription.
 
 ### Interact via the orchestrator
 
@@ -320,6 +448,10 @@ Open [http://localhost:3000](http://localhost:3000) to view live agent activity,
 ### Start everything at once
 
 ```powershell
+# Via the oc command (recommended — uses your PowerShell profile)
+oc
+
+# Or directly via the launcher script
 .\opencode-start.ps1
 ```
 
@@ -369,6 +501,41 @@ Open [http://localhost:3000](http://localhost:3000) to view live agent activity,
 
 ## Troubleshooting
 
+### Proxy failed to start
+
+```powershell
+# 1. Check Claude authentication
+claude auth status
+
+# 2. Check if port 3456 is already in use
+netstat -ano | findstr :3456
+
+# 3. Re-authenticate if needed
+claude login
+```
+
+Each OpenCode instance auto-assigns a port (3456, 3457, 3458…). Check the startup log for the actual port if multiple instances are running.
+
+### Claude Code CLI not found
+
+```powershell
+npm install -g @anthropic-ai/claude-code@latest
+```
+
+Then verify: `claude --version`
+
+### Claude not authenticated
+
+```powershell
+claude login
+```
+
+Opens a browser for OAuth login. Requires an active Claude Max subscription. After login, verify with `claude auth status`.
+
+### SDK features not applying
+
+Edit `~/.config/meridian/sdk-features.json` — changes take effect on the next request, no restart needed.
+
 ### shadcn MCP not connecting
 
 Run the init command to pre-cache the package:
@@ -406,14 +573,21 @@ Agents automatically retry with exponential backoff (2s, 5s, 10s) before degradi
 
 Run `/init-project` in your workspace first. This registers the project in SQLite and claude-mem so all agents can find it.
 
-### Models not found error
+### Models not found error (Claude agents)
 
-This system requires GitHub Copilot access for:
+Claude model calls (`claude-sonnet-4-6`, etc.) route through the Meridian proxy using your Claude Max subscription. If they fail:
+
+1. Confirm proxy is running: look for `Claude Max Proxy listening on http://127.0.0.1:3456` in startup logs
+2. Check auth: `claude auth status`
+3. Confirm `opencode.json` has the `provider.anthropic.baseURL` set to `http://127.0.0.1:3456`
+
+### Models not found error (GPT agents)
+
+GPT-4.1 agents (`atlas`, `prometheus`, `sisyphus`, etc.) require GitHub Copilot:
 - `github-copilot/gpt-4.1`
 - `github-copilot/gpt-4.1-mini`
-- `github-copilot/claude-sonnet-4.6`
 
-Ensure your GitHub Copilot subscription is active and OpenCode is authenticated.
+Ensure your GitHub Copilot subscription is active and OpenCode is authenticated with GitHub.
 
 ---
 
