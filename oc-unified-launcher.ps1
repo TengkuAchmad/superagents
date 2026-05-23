@@ -3,6 +3,10 @@
 # Meridian Proxy auto-starts inside OpenCode - no separate shell spawned
 # Ctrl+C caught by try/finally - shows Y/N confirmation before cleanup
 
+param(
+  [string]$CallerDir = (Get-Location).Path
+)
+
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $ProgressPreference = 'SilentlyContinue'
@@ -211,7 +215,7 @@ if (Test-Path $stopFile) { Remove-Item $stopFile -Force }
 
 @"
 `$host.ui.RawUI.WindowTitle = 'OpenCode'
-Set-Location -LiteralPath '$($configPaths.opencodeDir)'
+Set-Location -LiteralPath '$CallerDir'
 Write-Host ''
 Write-Host '=====================================================================' -ForegroundColor Cyan
 Write-Host '  OpenCode  (Meridian Proxy auto-starts inside OpenCode)' -ForegroundColor Cyan
@@ -229,7 +233,7 @@ Write-Host '  LAUNCHING OPENCODE IN WINDOWS TERMINAL (NEW TAB)' -ForegroundColor
 Write-Host '=====================================================================' -ForegroundColor Yellow
 Write-Host ''
 
-wt.exe -w 0 nt -d $configPaths.opencodeDir powershell -NoExit -File $tempScript
+wt.exe -w 0 nt -d $CallerDir powershell -NoExit -File $tempScript
 
 # Wait for WT to spawn the powershell process, then track its PID
 # Killing this powershell PID closes just that WT tab (not the whole window)
