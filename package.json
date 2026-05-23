@@ -1,0 +1,14 @@
+{
+  "name": "oh-my-openagent",
+  "version": "1.0.0",
+  "description": "Multi-agent orchestration platform built on OpenCode",
+  "scripts": {
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.15.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "typescript": "^5.9.3"
+  }
+}
