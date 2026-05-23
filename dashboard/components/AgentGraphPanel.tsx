@@ -209,14 +209,9 @@ export function AgentGraphPanel({ projectFilter = '' }: { projectFilter?: string
 
   const fetchGraph = useCallback(async () => {
     try {
-      // API server has been removed. Return empty demo data.
-      const data: GraphData = {
-        nodes: [],
-        edges: [],
-        last_updated: new Date().toISOString(),
-        total_actions: 0,
-        error: 'API server removed — showing demo mode (no data)',
-      };
+      const qs = projectFilter ? `?project_id=${projectFilter}` : '';
+      const res = await fetch(`/api/agent-graph${qs}`);
+      const data: GraphData = await res.json();
       const { nodes: n, edges: e } = buildElements(data);
       setNodes(n);
       setEdges(e);
@@ -224,7 +219,7 @@ export function AgentGraphPanel({ projectFilter = '' }: { projectFilter?: string
       setActiveCount(data.nodes.filter((nd) => nd.status === 'started').length);
       setTotalActions(data.total_actions);
       setIsEmpty(data.nodes.length === 0);
-      setIsLive(false);
+      setIsLive(true);
       setError(data.error ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fetch error');

@@ -1317,6 +1317,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
   const [toolBreakdown, setToolBreakdown] = useState<ToolBreakdown | null>(null);
   const [memoryBreakdown, setMemoryBreakdown] = useState<MemoryBreakdown | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [memoryGraph, setMemoryGraph] = useState<MemoryGraph | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [mcpHealth, setMcpHealth] = useState<MCPStatus[]>([]);
@@ -1326,14 +1327,48 @@ export default function DashboardPage() {
 
   const fetchAll = useCallback(async () => {
     try {
-      // API server has been removed. Dashboard shows static/demo data only.
-      setAgentLogs([]);
-      setPlanningLogs([]);
-      setProjects([]);
-      setStats(null);
-      setToolBreakdown(null);
-      setMemoryBreakdown(null);
-      setMemoryGraph(null);
+      setLoading(true);
+      // Fetch real data from SQLite database via API routes
+      const [logsRes, planRes, projRes, statsRes, toolRes, memRes, graphRes] = await Promise.all([
+        fetch('/api/agent-log'),
+        fetch('/api/planning-log'),
+        fetch('/api/projects'),
+        fetch('/api/analytics/stats'),
+        fetch('/api/analytics/tool-breakdown'),
+        fetch('/api/analytics/memory-breakdown'),
+        fetch('/api/agent-graph'),
+      ]);
+
+      if (logsRes.ok) {
+        const data = await logsRes.json();
+        setAgentLogs(data.logs || []);
+      }
+      if (planRes.ok) {
+        const data = await planRes.json();
+        setPlanningLogs(data.logs || []);
+      }
+      if (projRes.ok) {
+        const data = await projRes.json();
+        setProjects(data.projects || []);
+      }
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        setStats(data);
+      }
+      if (toolRes.ok) {
+        const data = await toolRes.json();
+        setToolBreakdown(data);
+      }
+      if (memRes.ok) {
+        const data = await memRes.json();
+        setMemoryBreakdown(data);
+      }
+      if (graphRes.ok) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _data = await graphRes.json();
+        // Store graph data if needed elsewhere
+      }
+
       setMcpHealth([]);
       setAgentNames(DEFAULT_AGENT_NAMES);
       setObservations([]);
