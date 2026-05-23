@@ -30,7 +30,7 @@ The system is built on top of [OpenCode](https://opencode.ai) and the [oh-my-ope
 
 - Custom 10-agent definitions with strict role boundaries
 - 7 active MCP servers (memory, token compression, UI registry, docs, search)
-- A REST API layer and Next.js monitoring dashboard
+- A Next.js monitoring dashboard
 - Self-learning routing via a few-shot observation library
 
 ---
@@ -78,7 +78,6 @@ orchestrator  (primary — single entry point, routes ALL requests)
 - **Three-tier memory** — short-term session buffer, long-term claude-mem observations, semantic vector store
 - **Automatic project registration** — `/init-project` crawls your repo and stores context for all agents
 - **Next.js monitoring dashboard** — live view of agent activity, routing edges, and workflow state
-- **Express REST API** — agent, analytics, and health endpoints
 - **MCP retry with exponential backoff** — 2s, 5s, 10s delays before graceful degradation
 
 ---
@@ -191,10 +190,10 @@ The `agent-data/` directory is created automatically on first run. It stores:
 
 No manual setup needed.
 
-### Step 9 — Start OpenCode
+### Step 9 — Start the system
 
 ```powershell
-# Windows (full system — OpenCode + API + dashboard)
+# Windows (full system — OpenCode + Claude Memory + dashboard)
 .\opencode-start.ps1
 
 # Or launch OpenCode only
@@ -318,17 +317,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view live agent activity, routing edges, and workflow state.
 
-### Start the API server
-
-```powershell
-.\start-api.ps1
-```
-
-API endpoints available at `http://localhost:3001`:
-- `GET /health` — system health check
-- `GET /api/agents` — list all agents and status
-- `GET /api/analytics` — session statistics
-
 ### Start everything at once
 
 ```powershell
@@ -359,10 +347,6 @@ API endpoints available at `http://localhost:3001`:
 │       ├── librarian.md
 │       ├── analyst.md
 │       └── init-project.md
-├── api/                    Express REST API
-│   ├── routes/
-│   ├── controllers/
-│   └── server.ts
 ├── config/                 Shared configuration modules
 ├── dashboard/              Next.js monitoring dashboard
 │   ├── app/
@@ -378,9 +362,7 @@ API endpoints available at `http://localhost:3001`:
 ├── workflows/              Workflow definitions and execution flows
 ├── oh-my-openagent.json    Agent identities, models, and prompt directives
 ├── opencode.json           OpenCode plugin and MCP server config
-├── opencode-start.ps1      Full system launcher (PowerShell)
-├── start-api.ps1           API server launcher
-└── start-dashboard.ps1     Dashboard launcher
+└── opencode-start.ps1      Full system launcher (PowerShell)
 ```
 
 ---
