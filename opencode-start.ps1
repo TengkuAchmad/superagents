@@ -49,7 +49,7 @@ while (-not $ready -and $tries -lt 40) {
   Start-Sleep -Seconds 1
   $tries++
   try {
-    $resp = Invoke-WebRequest -Uri "$dashboardUrl/api/agent-log" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
+    $resp = Invoke-WebRequest -Uri "$dashboardUrl" -UseBasicParsing -TimeoutSec 2 -ErrorAction SilentlyContinue
     if ($resp.StatusCode -eq 200) { $ready = $true }
   } catch { }
 }
