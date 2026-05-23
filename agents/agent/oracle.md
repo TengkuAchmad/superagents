@@ -122,10 +122,15 @@ When analysis requires reading code, always use this ladder:
    - Recommend a course of action with clear rationale
    - Identify risks and mitigations
 
-4. **Decision Logging**: Log every analysis and recommendation to SQLite:
-   ```sql
-   INSERT INTO agent_log (agent_name, action, description, status, result, project_id)
-   VALUES ('oracle', 'strategic_analysis', '<topic>', 'completed', '<recommendation_json>', '<project_id>');
+4. **Decision Logging**: Use the `sqlite` MCP to execute all SQL directly:
+   ```
+   write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, result, project_id) VALUES ('oracle', 'strategic_analysis', '<topic>', 'completed', '<recommendation_json>', '<project_id>')")
+   write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('<recommendation>', 'decision', '<project_id>', '{\"tags\":[\"type:oracle-decision\",\"topic:<topic>\"]}')")
+   ```
+
+   Also read prior observations before analysis:
+   ```
+   read_query(sql="SELECT content, kind, metadata FROM observations WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 10")
    ```
 
 **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the fallback.

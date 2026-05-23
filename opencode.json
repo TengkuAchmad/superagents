@@ -20,6 +20,15 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "sqlite": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "mcp-server-sqlite",
+        "--db-path",
+        "C:\\Users\\INTEL INSIDE\\.config\\opencode\\agent-data\\agent.db"
+      ]
     }
   }
 }

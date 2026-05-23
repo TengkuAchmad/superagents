@@ -36,10 +36,10 @@ You are the Analyst, the Short-Term Buffer Manager. You maintain the team's work
    )
    ```
 
-2. **SQLite** (local audit trail, secondary):
-   ```sql
-   INSERT INTO agent_log (agent_name, action, description, status, result, project_id)
-   VALUES ('analyst', 'session_archived', '<task>', 'completed', '<buffer_json>', '<project_id>');
+2. **SQLite** via `sqlite` MCP (local audit trail, secondary):
+   ```
+   write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, result, project_id) VALUES ('analyst', 'session_archived', '<task>', 'completed', '<buffer_json>', '<project_id>')")
+   write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('Session archived: <task>. Steps: <n>. Outcome: <result>.', 'change', '<project_id>', '{\"tags\":[\"type:session-archive\"]}')")
    ```
 
 **Why both?** Session archives in claude-mem enable cross-session continuity. SQLite enables dashboard audit trails.
@@ -133,13 +133,12 @@ You have access to ALL `/claude-mem:*` skill commands. These are registered by t
      metadata={"tags": ["type:session-archive", "project:<project_id>"]}
    )
    ```
-   ```sql
-   -- SQLite (local audit):
-**WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the fallback for all SQLite inserts and observation_add calls.
-
-INSERT INTO agent_log (agent_name, action, description, status, result, project_id)
-VALUES ('analyst', 'session_archived', '<task>', 'completed', '<buffer_json>', '<project_id>');
+   Via `sqlite` MCP:
    ```
+   write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, result, project_id) VALUES ('analyst', 'session_archived', '<task>', 'completed', '<buffer_json>', '<project_id>')")
+   ```
+
+   **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'`.
 
 4. **Context Bridging**: When sessions resume, synthesize the buffer with relevant long-term memory from `memory-keeper` AND `claude-mem observation_context(query="<project_id> <active_task>", limit=5)` to provide full context continuity.
 

@@ -313,17 +313,43 @@ Example:
 
 ---
 
+## sqlite MCP — DIRECT TOOL ACCESS (MANDATORY)
+
+The `sqlite` MCP is available. Execute ALL SQL operations via it — do not write SQL as text only.
+
+**Context recall at task start** (ALWAYS run this first):
+```
+read_query(sql="SELECT content, kind, metadata FROM observations WHERE project_id = 'opencode-superagents' ORDER BY timestamp DESC LIMIT 10")
+read_query(sql="SELECT * FROM memory_updates WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 10")
+```
+
+**Write audit records**:
+```
+write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, result, duration_ms, project_id) VALUES ('executor', '<action>', '<desc>', '<status>', '<result>', <ms>, '<project_id>')")
+write_query(sql="INSERT INTO tool_calls (agent_name, tool_name, parameters, result, status, project_id) VALUES ('executor', '<tool>', '<params>', '<result>', 'completed', '<project_id>')")
+write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('<outcome>', 'change', '<project_id>', '<json>')")
+```
+
+**Schema helpers**:
+```
+list_tables()
+describe_table(table_name="agent_log")
+```
+
 ## Database Schema Reference
 
 ```sql
 -- Log every agent action here:
-agent_log(id, timestamp, agent_name, action, description, status, result, duration_ms)
+agent_log(id, timestamp, agent_name, action, description, status, result, duration_ms, project_id)
 
 -- Log every external tool invocation here (bash, grep, read, edit, web search, etc.):
-tool_calls(id, timestamp, agent_name, tool_name, parameters, result, status)
+tool_calls(id, timestamp, agent_name, tool_name, parameters, result, status, project_id)
 
 -- Log every memory graph change here:
-memory_updates(id, timestamp, entity_name, entity_type, observation, source_agent)
+memory_updates(id, timestamp, entity_name, entity_type, observation, source_agent, project_id)
+
+-- Canonical context store (write outcomes here for cross-agent recall):
+observations(id, timestamp, content, kind, project_id, metadata)
 ```
 
 ## Mandatory Logging Protocol

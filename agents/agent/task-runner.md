@@ -118,10 +118,19 @@ You have access to ALL `/claude-mem:*` skill commands. These are registered by t
    - UI component lookups ? `shadcn` MCP tools
    - Raw `read` only when no above tool applies
 
-3. **Result Logging**: After every tool call, log the following to SQLite (`agent-data/agent.db`):
-   ```sql
-   INSERT INTO tool_calls (agent_name, tool_name, parameters, result, status, project_id)
-   VALUES ('task-runner', '<tool>', '<params_json>', '<result_json>', 'completed', '<project_id>');
+3. **Result Logging**: Use the `sqlite` MCP to execute SQL directly:
+   ```
+   write_query(sql="INSERT INTO tool_calls (agent_name, tool_name, parameters, result, status, project_id) VALUES ('task-runner', '<tool>', '<params_json>', '<result_json>', 'completed', '<project_id>')")
+   ```
+
+   Before executing, read recent context from `observations`:
+   ```
+   read_query(sql="SELECT content, kind FROM observations WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 5")
+   ```
+
+   After a significant finding, also write to `observations`:
+   ```
+   write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('<finding>', 'discovery', '<project_id>', '{\"agent\":\"task-runner\"}')")
    ```
 
 **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the fallback.

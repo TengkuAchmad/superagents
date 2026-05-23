@@ -61,10 +61,9 @@ Before routing ANY task, evaluate its size and complexity:
 2. ? Route to `planner` with explicit instruction to **decompose into atomic subtasks**
 3. ? Each subtask must be: single-domain, =5 files, clear scope boundary
 4. ? Planner will then delegate each subtask to the correct executor(s)
-5. ? Log the decomposition decision:
-   ```sql
-   INSERT INTO agent_log (agent_name, action, description, status)
-   VALUES ('orchestrator', 'decompose', 'Task too large � routed to Planner for splitting: <summary>', 'started');
+5. ? Log the decomposition decision via `sqlite` MCP:
+   ```
+   write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, project_id) VALUES ('orchestrator', 'decompose', 'Task too large - routed to Planner for splitting: <summary>', 'started', '<project_id>')")
    ```
 
 **Example � WRONG (task too large, sent directly to executor):**
@@ -94,9 +93,9 @@ Before first delegation, check all MCP tools are responsive:
 
 Before routing ANY task, detect which project the user is working on:
 
-1. **Query SQLite project_registry**:
-   ```sql
-   SELECT project_id, project_name, repo_path, tech_stack, conventions FROM project_registry
+1. **Query SQLite project_registry** via `sqlite` MCP:
+   ```
+   read_query(sql="SELECT project_id, project_name, repo_path, tech_stack, conventions FROM project_registry")
    ```
 
 2. **Auto-detect from working directory**: The current workspace path determines the active project.
@@ -122,11 +121,10 @@ Before routing ANY task, detect which project the user is working on:
 
 **MUST FILTER BY PROJECT � before searching memory:**
 
-1. **Query SQLite for project-specific memory**:
-   ```sql
-   SELECT * FROM memory_updates
-   WHERE project_id = '<project_id>'
-   ORDER BY timestamp DESC LIMIT 20;
+1. **Query SQLite for project-specific memory** via `sqlite` MCP:
+   ```
+   read_query(sql="SELECT content, kind, metadata FROM observations WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 10")
+   read_query(sql="SELECT * FROM memory_updates WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 20")
    ```
 
 2. **Query knowledge graph for project entities**:

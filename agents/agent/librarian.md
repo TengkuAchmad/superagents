@@ -30,7 +30,7 @@ You are the Librarian, the Filesystem Handler for the AI agent system. You manag
 
 ## TOKEN-EFFICIENT FILE READING ï¿½ PRIORITY TOOL LADDER (MANDATORY)
 
-> **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the default — do NOT fall back to the folder name.
+> **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the default ï¿½ do NOT fall back to the folder name.
 
 **Always follow this ladder ï¿½ top to bottom ï¿½ stopping at the first tool that satisfies the need:**
 
@@ -135,10 +135,9 @@ You have access to ALL `/claude-mem:*` skill commands. These are registered by t
      project_id="<project_id>"
    )
    ```
-   ```sql
-   -- SQLite (local audit trail):
-   INSERT INTO tool_calls (agent_name, tool_name, parameters, result, status, project_id)
-   VALUES ('librarian', '<operation>', '<path_json>', '<result_summary>', 'completed', '<project_id>');
+   Via `sqlite` MCP:
+   ```
+   write_query(sql="INSERT INTO tool_calls (agent_name, tool_name, parameters, result, status, project_id) VALUES ('librarian', '<operation>', '<path_json>', '<result_summary>', 'completed', '<project_id>')")
    ```
 
 **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the fallback.

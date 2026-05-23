@@ -181,16 +181,12 @@ If no lessons found, proceed normally. Never skip this step � an empty result 
 
 **STEP 0: PROJECT-SPECIFIC MEMORY RECALL (MANDATORY BEFORE PLANNING)**
 
-Before planning, fetch project-specific memory:
+Before planning, fetch project-specific memory via the `sqlite` MCP:
 
-```sql
--- SQLite: Only this project's history
-SELECT * FROM memory_updates
-WHERE project_id = '<project_id>'
-ORDER BY timestamp DESC LIMIT 10;
-
--- Knowledge graph: Only this project's entities
--- Use metadata filter: { "project_id": "<project_id>" }
+```
+read_query(sql="SELECT content, kind, metadata FROM observations WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 10")
+read_query(sql="SELECT * FROM memory_updates WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 10")
+read_query(sql="SELECT * FROM planning_log WHERE project_id = '<project_id>' ORDER BY timestamp DESC LIMIT 5")
 ```
 
 **WORKSPACE DEFAULT**: When working in `C:\Users\INTEL INSIDE\.config\opencode`, use `project_id = 'opencode-superagents'` as the fallback — do NOT use the folder name.
@@ -211,10 +207,9 @@ This ensures:
 - ? Token-efficient (smaller context)
 - ? Knows what was planned/done before in THIS project
 
-**Mandatory logging includes project_id:**
-```sql
-INSERT INTO agent_log (agent_name, action, description, status, project_id)
-VALUES ('planner', '<action>', '<description>', 'completed', '<project_id>');
+**Mandatory logging via `sqlite` MCP:**
+```
+write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, project_id) VALUES ('planner', '<action>', '<description>', 'completed', '<project_id>')")
 ```
 
 **If project_id was NOT provided:**
@@ -328,10 +323,10 @@ After decomposition, log to BOTH layers:
    )
    ```
 
-2. **SQLite**:
-   ```sql
-   INSERT INTO planning_log (agent_name, task_summary, subtask_count, project_id)
-   VALUES ('planner', '<task>', <n>, '<project_id>');
+2. **SQLite** via `sqlite` MCP:
+   ```
+   write_query(sql="INSERT INTO planning_log (task, subtasks, status, project_id) VALUES ('<task>', '<subtasks_json>', 'completed', '<project_id>')")
+   write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('Plan: <task>. Steps: <n>.', 'decision', '<project_id>', '{\"tags\":[\"type:plan\"]}')")
    ```
 
 This creates a traceable audit trail of decomposition decisions.

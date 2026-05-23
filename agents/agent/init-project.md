@@ -56,10 +56,10 @@ If AUTO_DETECTED data is provided in the prompt:
 
 ## Phase 0: Check for Duplicates (MANDATORY FIRST)
 
-Before asking ANY questions, check if the project already exists:
+Before asking ANY questions, check if the project already exists via the `sqlite` MCP:
 
-```sql
-SELECT project_id, project_name, repo_path, registered_at FROM project_registry
+```
+read_query(sql="SELECT project_id, project_name, repo_path, registered_at FROM project_registry")
 ```
 
 Display existing projects to user:
@@ -564,38 +564,17 @@ If `projects` collection does not exist, create it first.
 --          registered_at, updated_at
 ```
 
-**Then insert/update the project registry:**
+**Then insert/update the project registry** via `sqlite` MCP `write_query`:
 
-```sql
-INSERT OR REPLACE INTO project_registry (
-  project_id, project_name, repo_path, description,
-  tech_stack, conventions, directory_tree, key_files,
-  commands, environment_vars, git_info, agent_files, dependencies,
-  updated_at
-)
-VALUES (
-  '<PROJECT_ID>',
-  '<PROJECT_NAME>',
-  '<REPO_PATH>',
-  '<DESCRIPTION>',
-  '<TECH_STACK JSON>',
-  '<CONVENTIONS JSON>',
-  '<DIRECTORY_TREE JSON>',
-  '<KEY_FILES JSON>',
-  '<COMMANDS JSON>',
-  '<ENVIRONMENT_VARS JSON>',
-  '<GIT_INFO JSON>',
-  '<AGENT_FILES JSON or NULL>',
-  '<DEPENDENCIES JSON>',
-  CURRENT_TIMESTAMP
-);
+```
+write_query(sql="INSERT OR REPLACE INTO project_registry (project_id, project_name, repo_path, description, tech_stack, conventions, directory_tree, key_files, commands, environment_vars, git_info, agent_files, dependencies, updated_at) VALUES ('<PROJECT_ID>', '<PROJECT_NAME>', '<REPO_PATH>', '<DESCRIPTION>', '<TECH_STACK JSON>', '<CONVENTIONS JSON>', '<DIRECTORY_TREE JSON>', '<KEY_FILES JSON>', '<COMMANDS JSON>', '<ENVIRONMENT_VARS JSON>', '<GIT_INFO JSON>', '<AGENT_FILES JSON or NULL>', '<DEPENDENCIES JSON>', CURRENT_TIMESTAMP)")
 ```
 
-**Then log the registration action:**
+**Then log the registration action** via `sqlite` MCP:
 
-```sql
-INSERT INTO agent_log (agent_name, action, description, status, project_id)
-VALUES ('init-project', 'register', 'Project registered: <PROJECT_NAME> (<PROJECT_ID>)', 'completed', '<PROJECT_ID>');
+```
+write_query(sql="INSERT INTO agent_log (agent_name, action, description, status, project_id) VALUES ('init-project', 'register', 'Project registered: <PROJECT_NAME> (<PROJECT_ID>)', 'completed', '<PROJECT_ID>')")
+write_query(sql="INSERT INTO observations (content, kind, project_id, metadata) VALUES ('Project registered: <PROJECT_NAME>. Repo: <REPO_PATH>. Stack: <TECH_STACK summary>.', 'feature', '<PROJECT_ID>', '{\"tags\":[\"type:project-registration\"]}')")
 ```
 
 **CRITICAL:** All JSON fields (tech_stack, conventions, directory_tree, key_files, commands, environment_vars, git_info, agent_files, dependencies) must be valid JSON strings. Use `JSON.stringify()` if building from objects.
