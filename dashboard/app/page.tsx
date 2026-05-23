@@ -1325,37 +1325,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
-    const projectFilter = selectedProject === 'all' ? '' : `&project_id=${selectedProject}`;
     try {
-      const [al, pl, pr, st, tb, mb, mg, mh, an, obs] = await Promise.all([
-        fetch(`/api/agent-log?limit=100${projectFilter}`).then((r) => r.json()),
-        fetch(`/api/planning-log?limit=100${projectFilter}`).then((r) => r.json()),
-        fetch('/api/projects').then((r) => r.json()),
-        fetch(`/api/analytics/stats${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
-        fetch(`/api/analytics/tool-breakdown${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
-        fetch(`/api/analytics/memory-breakdown${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
-        fetch(`/api/memory-graph${projectFilter ? '?' + projectFilter.slice(1) : ''}`).then((r) => r.json()),
-        fetch('/api/mcp-health').then((r) => r.json()),
-        fetch('/api/agent-names').then((r) => r.json()),
-        fetch(`/api/observations?limit=200${projectFilter}`).then((r) => r.json()),
-      ]);
-      setAgentLogs(al.data ?? []);
-      setPlanningLogs(pl.data ?? []);
-      setProjects(pr.data ?? []);
-      if (!st.error) setStats(st);
-      if (!tb.error) setToolBreakdown(tb);
-      if (!mb.error) setMemoryBreakdown(mb);
-      if (!mg.error) setMemoryGraph(mg);
-      if (mh.mcps) setMcpHealth(mh.mcps);
-      if (an.names) setAgentNames(an.names);
-      if (obs.data) setObservations(obs.data as Observation[]);
+      // API server has been removed. Dashboard shows static/demo data only.
+      setAgentLogs([]);
+      setPlanningLogs([]);
+      setProjects([]);
+      setStats(null);
+      setToolBreakdown(null);
+      setMemoryBreakdown(null);
+      setMemoryGraph(null);
+      setMcpHealth([]);
+      setAgentNames(DEFAULT_AGENT_NAMES);
+      setObservations([]);
       setLastRefresh(new Date());
     } catch (e) {
       console.error('Fetch error:', e);
     } finally {
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, []);
 
   useEffect(() => {
     fetchAll();
@@ -1365,11 +1353,7 @@ export default function DashboardPage() {
 
   const handleRename = async (updated: Record<string, string>) => {
     try {
-      await fetch('/api/agent-names', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ names: updated }),
-      });
+      // API server has been removed. Rename is no longer persisted.
       setAgentNames(updated);
     } catch (e) {
       console.error('Rename error:', e);
@@ -1380,57 +1364,16 @@ export default function DashboardPage() {
     setSelectedProject(projectId);
   };
 
-  const handleDeleteProject = async (type: 'agent-log' | 'tool-calls' | 'memory' | 'planning') => {
-    if (selectedProject === 'all') {
-      alert('Please select a specific project first');
-      return;
-    }
-    if (!confirm(`Delete all ${type} data for this project?`)) return;
-
-    try {
-      const endpointMap = {
-        'agent-log': '/api/agent-log',
-        'tool-calls': '/api/tool-calls',
-        'memory': '/api/memory-updates',
-        'planning': '/api/planning-log',
-      } as const;
-      const endpoint = endpointMap[type];
-
-      const res = await fetch(`${endpoint}?project_id=${selectedProject}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Deleted ${data.deleted} records`);
-        fetchAll();
-      } else {
-        alert(`Error: ${data.error}`);
-      }
-    } catch (e) {
-      console.error('Delete error:', e);
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleDeleteProject = async (_tab?: string) => {
+    // API server has been removed. Delete operations are no longer available.
+    alert('Delete operations are not available (API server has been removed)');
   };
 
-  const handleDeleteRecord = async (type: 'agent-log' | 'tool-calls' | 'memory' | 'planning', id: number) => {
-    if (!confirm(`Delete this record (ID: ${id})?`)) return;
-
-    try {
-      const endpointMap = {
-        'agent-log': '/api/agent-log',
-        'tool-calls': '/api/tool-calls',
-        'memory': '/api/memory-updates',
-        'planning': '/api/planning-log',
-      } as const;
-      const endpoint = endpointMap[type];
-
-      const res = await fetch(`${endpoint}?id=${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        fetchAll();
-      } else {
-        alert(`Error: ${data.error}`);
-      }
-    } catch (e) {
-      console.error('Delete error:', e);
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleDeleteRecord = async (_type: string, _id: number) => {
+    // API server has been removed. Delete operations are no longer available.
+    alert('Delete operations are not available (API server has been removed)');
   };
 
   const TABS: TabConfig[] = [
@@ -1511,9 +1454,9 @@ export default function DashboardPage() {
           <div className="flex justify-end mb-4">
             <Button
               variant="outline"
-              className="text-destructive border-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleDeleteProject('agent-log')}
-              disabled={selectedProject === 'all'}
+              className="text-destructive border-destructive hover:text-destructive hover:bg-destructive/10 opacity-50 cursor-not-allowed"
+              disabled={true}
+              title="Delete operations not available (API server removed)"
             >
               <Trash2 size={14} className="mr-1" />
               Delete All for Project
