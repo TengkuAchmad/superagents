@@ -1,0 +1,17 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=claude-max. Requires: Claude Max subscription via Meridian proxy + GitHub Copilot subscription for GPT/Haiku fallbacks.",
+  "default": {
+    "model": "anthropic/claude-sonnet-4-6",
+    "fallback_models": [
+      { "model": "github-copilot/claude-sonnet-4.5" },
+      { "model": "github-copilot/claude-haiku-4.5" },
+      { "model": "github-copilot/gpt-4.1" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+  "overrides": {
+    "oracle":          { "model": "anthropic/claude-sonnet-4-6" },
+    "sisyphus-junior": { "model": "github-copilot/claude-haiku-4.5" }
+  }
+}

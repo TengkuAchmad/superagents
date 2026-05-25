@@ -1,0 +1,45 @@
+# ── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+bun.lock
+
+# ── Build artifacts ─────────────────────────────────────────────────────────
+.next/
+dist/
+build/
+out/
+
+# ── Runtime data (SQLite, session buffer, vector store) ─────────────────────
+agent-data/
+dashboard/session-buffer.json
+oh-my-openagent.json.migrations.json
+
+# ── Profile / config backups (timestamped, auto-generated) ──────────────────
+oh-my-openagent.json.bak*
+*.json.bak.*
+*.json.bak-*
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+/tmp/
+
+# ── Env / secrets ───────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Editor / OS ─────────────────────────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── Internal / personal docs ────────────────────────────────────────────────
+# Briefs, conversation outputs, walkthroughs with personal paths.
+# Kept locally for reference, NOT shared.
+PROJECT_BRIEF_FOR_CHATGPT.md
+RINGKASAN_UNTUK_SENIOR.md
+UJI_COBA_MINI_PROJECT.md
+PANDUAN_PROJEK_BARU.md
+CARA_PAKAI_TOKEN_TRACKING.md
+hasil_brief_dengan_chatgpt.md

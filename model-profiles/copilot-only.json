@@ -1,0 +1,18 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=copilot-only. Requires: GitHub Copilot subscription (active in opencode).",
+  "default": {
+    "model": "github-copilot/claude-sonnet-4.5",
+    "fallback_models": [
+      { "model": "github-copilot/claude-haiku-4.5" },
+      { "model": "github-copilot/gpt-4.1" },
+      { "model": "github-copilot/gpt-4.1-mini" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+  "overrides": {
+    "sisyphus-junior": { "model": "github-copilot/gpt-4.1-mini" },
+    "metis":           { "model": "github-copilot/gpt-4.1-mini" },
+    "momus":           { "model": "github-copilot/gpt-4.1-mini" }
+  }
+}

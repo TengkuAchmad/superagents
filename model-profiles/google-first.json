@@ -1,0 +1,22 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=google-first. Requires: GEMINI_API_KEY env var (https://aistudio.google.com/apikey).",
+  "default": {
+    "model": "google/gemini-2.5-flash",
+    "fallback_models": [
+      { "model": "google/gemini-2.0-flash" },
+      { "model": "google/gemini-1.5-flash" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+  "overrides": {
+    "oracle": {
+      "model": "google/gemini-2.5-flash",
+      "_note": "Oracle gets the most capable Gemini for architectural decisions. If quality is insufficient, change to anthropic/claude-sonnet-4-6 manually."
+    },
+    "sisyphus-junior": {
+      "model": "google/gemini-1.5-flash",
+      "_note": "Task-runner uses smaller Gemini for single-tool quick ops."
+    }
+  }
+}

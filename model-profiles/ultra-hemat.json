@@ -1,0 +1,10 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=ultra-hemat. Pure free models — no subscription / API key required. Quality is the lowest tier; use for learning / experimentation.",
+  "default": {
+    "model": "opencode/deepseek-v4-flash-free",
+    "fallback_models": [
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+  "overrides": {}
+}

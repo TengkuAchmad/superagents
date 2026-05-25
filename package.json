@@ -1,0 +1,19 @@
+{
+  "name": "oh-my-openagent",
+  "version": "1.0.0",
+  "description": "Multi-agent orchestration platform built on OpenCode",
+  "scripts": {
+    "start": "node scripts/start.mjs",
+    "start:no-tui": "node scripts/start.mjs --no-tui",
+    "start:no-dash": "node scripts/start.mjs --no-dash",
+    "status": "node scripts/status.mjs",
+    "profile": "node scripts/apply-profile.mjs"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "1.15.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "typescript": "^5.9.3"
+  }
+}
