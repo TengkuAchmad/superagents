@@ -5,6 +5,26 @@
 > can render a coherent task graph + timeline ("Must Team Workflow") without
 > per-agent special-casing.
 
+## Reality check: REAL vs VISUAL delegation
+
+The opencode + oh-my-openagent plugin currently exposes only **two** callable
+sub-agents via `call_omo_agent`: `librarian` and `explore`. There is **no
+`task()` tool** for invoking planner / executor / oracle / memory-keeper as
+separate model calls.
+
+This means delegation in this system comes in two flavors:
+
+| Flavor | What happens | When to use |
+|---|---|---|
+| **REAL** — `call_omo_agent('librarian'\|'explore', ...)` or `skill('/claude-mem:make-plan'\|'/do'\|'/pathfinder'\|...)` | A separate model call is spawned with isolated context. Token + cost are tracked per-call. True parallelism / context isolation. | Heavy work: multi-file plans, big refactors, architecture reasoning. |
+| **VISUAL** — `activity-logger.log_action(action='route', description='→ <agent>')` | Atlas (or any agent) emits a log row that the dashboard reads as a delegation edge in the graph. No new model call — the same agent keeps working. | Documenting WORKFLOW PHASES (plan→execute→review) for human readability and audit trails, even when one agent does all the work. |
+
+**Both are legitimate.** Use REAL when you need actual parallelism / context
+isolation. Use VISUAL when you just want the graph to show the logical flow.
+
+Mix them: log VISUAL "→ planner" before calling REAL `skill('/claude-mem:make-plan')`,
+so the graph shows the edge AND the work happens in an isolated call.
+
 The dashboard's interpreter lives in `dashboard/lib/lifecycle-events.ts` and
 maps your raw log values into a fixed vocabulary. As long as your `action` and
 `status` values follow the table below, you will show up correctly in:

@@ -54,6 +54,19 @@ orchestrator  (primary — single entry point, routes ALL requests)
 └── init-project  Registers new projects into MCP memory (one-time setup)
 ```
 
+### Delegation reality check
+
+The current opencode + oh-my-openagent plugin exposes only **two** callable sub-agents (`librarian` and `explore`) — there is no native `task()` tool for spawning planner/executor/oracle as separate model calls. The 10-agent hierarchy below is therefore implemented as a **two-layer pattern**:
+
+| Layer | Mechanism | Effect |
+|---|---|---|
+| **REAL work distribution** | `skill('/claude-mem:make-plan')`, `skill('/claude-mem:do')`, `skill('/claude-mem:pathfinder')`, `call_omo_agent('librarian'\|'explore', …)` | Each call spawns a separate model invocation with isolated context. True work distribution per phase. |
+| **VISUAL graph delegation** | `activity-logger.log_action(action='route', description='→ <agent-id>')` | Tells the dashboard to draw an edge. Used to label phases (planner → executor → oracle) for human-readable workflow audit, even when one underlying agent does multiple phases. |
+
+In practice you mix them: emit a VISUAL "→ planner" log right before calling REAL `skill('/claude-mem:make-plan')`. The dashboard ends up showing the multi-agent collaboration you'd expect, AND the heavy work happens in isolated calls.
+
+See [`agents/agent/LIFECYCLE_PROTOCOL.md`](agents/agent/LIFECYCLE_PROTOCOL.md) "REAL vs VISUAL delegation" for the canonical reference, and [`agents/agent/orchestrator.md`](agents/agent/orchestrator.md) for the translation table from `task(X, …)` (aspirational) to the runtime equivalents.
+
 **Named agents** (from `oh-my-openagent.json` — that file is authoritative):
 
 | Agent Name | Role | Model (current) |

@@ -43,6 +43,33 @@ When prompt prose and code diverge, treat code workflow modules as implementatio
 
 Every single request � no exceptions � must be routed to a specialist sub-agent via the `task` tool. Your ONLY job is: classify ? size-check ? split if needed ? delegate ? wait ? log ? return result. If you find yourself writing code, editing files, or doing work that belongs to another agent, STOP immediately and delegate instead.
 
+> **Runtime reality check (READ FIRST):** in the current opencode + oh-my-openagent
+> setup, the `task()` tool referenced throughout this spec **does not exist**.
+> Only `call_omo_agent` is available, and it accepts ONLY `librarian` or `explore`.
+> Everything below that says `task(planner, ...)`, `task(executor, ...)`, etc.
+> must be translated at runtime to:
+>
+> 1. **REAL delegation via skill()** — for actual separate-context work:
+>    - `task(planner, ...)` → `skill('/claude-mem:make-plan', <task description>)`
+>    - `task(executor, ...)` → `skill('/claude-mem:do', <plan or atomic step>)`
+>    - `task(oracle, ...)` → `skill('/claude-mem:pathfinder', <arch question>)`
+>    - `task(librarian, ...)` → `call_omo_agent('librarian', ...)`
+>    - `task(explore, ...)` → `call_omo_agent('explore', ...)`
+>    - `task(memory-keeper, ...)` → use `mcp-search` tools directly (no skill needed)
+>
+> 2. **VISUAL delegation via activity-logger** — for graph/timeline rendering only:
+>    Always BEFORE the real call above, emit
+>    `activity-logger.log_action(action='route', description='→ <agent-id>')`
+>    so the dashboard draws an edge. Then do the real work via skill() or call_omo_agent.
+>
+> The two together give the same UX as the original design: visible
+> multi-agent collaboration in the dashboard PLUS real isolated-context work
+> per phase. See `LIFECYCLE_PROTOCOL.md` "REAL vs VISUAL delegation" for the
+> full table.
+>
+> If you ignore this and try to call `task(...)` literally, the call will
+> error out and you will end up doing the work yourself (anti-pattern).
+
 ---
 
 ## Step 0A: Large Task Detection (MANDATORY � BEFORE ROUTING)
