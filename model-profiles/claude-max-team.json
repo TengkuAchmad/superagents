@@ -1,0 +1,24 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=claude-max-team. For team members with Claude Max subscription (shared account) + optionally GitHub Copilot. Routes brain work to Sonnet/Opus, execution to Sonnet, infra/cheap ops to Haiku.",
+
+  "default": {
+    "model": "anthropic/claude-sonnet-4-6",
+    "fallback_models": [
+      { "model": "github-copilot/claude-sonnet-4.5" },
+      { "model": "github-copilot/claude-haiku-4.5" },
+      { "model": "github-copilot/gpt-4.1" },
+      { "model": "google/gemini-2.5-flash" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+
+  "overrides": {
+    "oracle":               { "model": "anthropic/claude-opus-4-6" },
+    "security-engineer":    { "model": "anthropic/claude-opus-4-6" },
+    "tech-writer":          { "model": "github-copilot/claude-haiku-4.5" },
+    "librarian":            { "model": "github-copilot/claude-haiku-4.5" },
+    "sisyphus-junior":      { "model": "github-copilot/claude-haiku-4.5" },
+    "task-runner":          { "model": "github-copilot/claude-haiku-4.5" }
+  }
+}

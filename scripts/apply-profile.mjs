@@ -29,17 +29,35 @@ const SPECS_DIR = join(REPO_ROOT, 'agents', 'agent');
 // Map .md filename → JSON agent key. The .md filename is the canonical role
 // (orchestrator.md), the JSON key is the opencode_key (atlas). Keep this list
 // in sync with agent-registry.ts.
+//
+// New specialists (ui-designer, frontend-engineer, ...) don't have separate
+// JSON entries — they use their own canonical id as both spec and JSON key.
+// applyToAgent() will look up profile.overrides[<name>] first, fall back to
+// profile.default.
 const SPEC_TO_JSON_AGENT = {
-  'orchestrator':  'atlas',
-  'planner':       'prometheus',
-  'executor':      'sisyphus',
-  'task-runner':   'sisyphus-junior',
-  'oracle':        'oracle',
-  'memory-keeper': 'metis',
-  'chronicler':    'momus',
-  'librarian':     'librarian',
-  'analyst':       'multimodal-looker',
-  'init-project':  'init-project', // no separate JSON key — treated as its own
+  // Senior's original 10 (different JSON keys)
+  'orchestrator':         'atlas',
+  'planner':              'prometheus',
+  'executor':             'sisyphus',
+  'task-runner':          'sisyphus-junior',
+  'oracle':               'oracle',
+  'memory-keeper':        'metis',
+  'chronicler':           'momus',
+  'librarian':            'librarian',
+  'analyst':              'multimodal-looker',
+  'init-project':         'init-project',
+
+  // New 9 specialists (spec name == JSON key, no aliasing needed)
+  'ui-designer':          'ui-designer',
+  'frontend-engineer':    'frontend-engineer',
+  'backend-engineer':     'backend-engineer',
+  'integration-engineer': 'integration-engineer',
+  'security-engineer':    'security-engineer',
+  'devops-engineer':      'devops-engineer',
+  'data-engineer':        'data-engineer',
+  'qa-engineer':          'qa-engineer',
+  'performance-engineer': 'performance-engineer',
+  'tech-writer':          'tech-writer',
 };
 
 const c = {
@@ -132,7 +150,16 @@ for (const file of specFiles) {
   const jsonAgentKey = SPEC_TO_JSON_AGENT[specName];
   if (!jsonAgentKey) continue; // skip AGENTS.md / LIFECYCLE_PROTOCOL.md / unknown
 
-  const targetModel = (config.agents?.[jsonAgentKey]?.model) ?? profile.default.model;
+  // Model selection priority:
+  //   1. profile.overrides[<specName>].model — explicit per-spec override
+  //   2. config.agents[<jsonAgentKey>].model — JSON config (legacy agents)
+  //   3. profile.default.model — fallback
+  // New specialists (ui-designer, etc.) only live in spec files, so they
+  // resolve via #1 or #3.
+  const targetModel =
+    profile.overrides?.[specName]?.model ??
+    config.agents?.[jsonAgentKey]?.model ??
+    profile.default.model;
   const specPath = join(SPECS_DIR, file);
   const content = readFileSync(specPath, 'utf8');
 
