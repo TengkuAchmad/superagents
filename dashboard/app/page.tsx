@@ -33,6 +33,10 @@ import {
   TestTube,
   Gauge,
   FileText,
+  // Phase 2 specialists
+  Compass,
+  Search,
+  Siren,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -193,6 +197,10 @@ const AGENT_ICON_MAP: Record<string, LucideIcon> = {
   'qa-engineer': TestTube,
   'performance-engineer': Gauge,
   'tech-writer': FileText,
+  // Phase 2 specialists
+  'business-analyst': Compass,
+  'code-reviewer': Search,
+  sre: Siren,
 };
 
 const DEFAULT_AGENT_NAMES: Record<string, string> = Object.fromEntries(
@@ -369,6 +377,39 @@ const AGENT_METADATA: Record<string, AgentMeta> = {
     skills: ['README', 'API reference', 'user guides', 'changelogs', 'docs maintenance'],
     model: 'Claude Haiku 4.5',
     fallback: 'Claude Sonnet 4.6',
+  },
+  // ── Phase 2 specialists ────────────────────────────────────────────────────
+  'business-analyst': {
+    internalKey: 'business-analyst',
+    role: 'Business Analyst',
+    description: 'First agent for vague user intents — translates one-line ideas into structured specs with user journeys, acceptance criteria, and scope boundaries. Reduces wasted token cost from premature implementation.',
+    skills: ['user stories', 'acceptance criteria', 'MVP scoping', 'risk identification', 'requirements'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'code-reviewer': {
+    internalKey: 'code-reviewer',
+    role: 'Code Reviewer',
+    description: 'PR-style code review — code quality, patterns, naming, anti-patterns, maintainability. Approves / requests changes / nitpicks. Complementary to QA (behavior) and security-engineer (attack surface).',
+    skills: ['code review', 'patterns', 'idioms', 'maintainability', 'convention consistency'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  sre: {
+    internalKey: 'sre',
+    role: 'SRE',
+    description: 'Production reliability — monitoring, alerts, on-call runbooks, post-mortems, SLO/SLI definitions. Owns what happens after deploy. Blameless incident analysis.',
+    skills: ['SLO/SLI', 'runbooks', 'alerts', 'post-mortems', 'observability'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  init: {
+    internalKey: 'init-project',
+    role: 'Project Init',
+    description: 'Registers new projects into shared MCP memory so all agents have context without re-reading files every session. Interviews user, crawls repo, stores structured context.',
+    skills: ['project registration', 'context crawling', 'memory init', 'tech stack detection'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
   },
 };
 

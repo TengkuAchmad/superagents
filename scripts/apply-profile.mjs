@@ -58,6 +58,11 @@ const SPEC_TO_JSON_AGENT = {
   'qa-engineer':          'qa-engineer',
   'performance-engineer': 'performance-engineer',
   'tech-writer':          'tech-writer',
+
+  // Phase 2 specialists
+  'business-analyst':     'business-analyst',
+  'code-reviewer':        'code-reviewer',
+  'sre':                  'sre',
 };
 
 const c = {

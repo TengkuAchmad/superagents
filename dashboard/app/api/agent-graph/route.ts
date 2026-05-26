@@ -72,11 +72,15 @@ const ROLE_CANON: Record<string, string> = {
   'backend-engineer': 'backend-engineer', backend: 'backend-engineer', 'be-engineer': 'backend-engineer',
   'integration-engineer': 'integration-engineer', integration: 'integration-engineer', 'glue-engineer': 'integration-engineer',
   'security-engineer': 'security-engineer', security: 'security-engineer', 'sec-engineer': 'security-engineer',
-  'devops-engineer': 'devops-engineer', devops: 'devops-engineer', sre: 'devops-engineer',
+  'devops-engineer': 'devops-engineer', devops: 'devops-engineer',
   'data-engineer': 'data-engineer', data: 'data-engineer', 'data-analyst': 'data-engineer',
   'qa-engineer': 'qa-engineer', qa: 'qa-engineer', tester: 'qa-engineer',
   'performance-engineer': 'performance-engineer', performance: 'performance-engineer', 'perf-engineer': 'performance-engineer',
   'tech-writer': 'tech-writer', writer: 'tech-writer', 'docs-writer': 'tech-writer',
+  // Phase 2 specialists
+  'business-analyst': 'business-analyst', ba: 'business-analyst', 'analyst-business': 'business-analyst',
+  'code-reviewer': 'code-reviewer', reviewer: 'code-reviewer', 'pr-reviewer': 'code-reviewer',
+  sre: 'sre', 'reliability-engineer': 'sre', 'site-reliability': 'sre',
 };
 
 function resolveId(raw: string): string {

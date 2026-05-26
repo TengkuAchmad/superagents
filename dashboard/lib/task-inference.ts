@@ -154,6 +154,7 @@ export function runTaskInference(): { sessionsCreated: number; tasksCreated: num
   if (pending.length === 0) {
     // Still run label back-fill for old sessions that never got one.
     backfillSessionLabels(db);
+    backfillTaskTitles(db);
     return { sessionsCreated, tasksCreated, rowsTagged };
   }
 
@@ -181,11 +182,19 @@ export function runTaskInference(): { sessionsCreated: number; tasksCreated: num
         ended_at = ?
     WHERE id = ?
   `);
-  // Upgrade a "Session bootstrap" placeholder once a real description shows up.
+  // Upgrade a task title once a real (non-boilerplate, non-route) description
+  // shows up. Used to replace 'Session bootstrap' AND ugly route placeholders
+  // like '→ planner' that snuck in as initial titles.
   const upgradeBootstrapTitle = db.prepare(`
     UPDATE tasks
     SET title = ?, origin_prompt = COALESCE(origin_prompt, ?)
-    WHERE id = ? AND title = 'Session bootstrap'
+    WHERE id = ?
+      AND (title = 'Session bootstrap'
+           OR title LIKE '→%'
+           OR title LIKE '←%'
+           OR title = 'Task'
+           OR title IS NULL
+           OR LENGTH(TRIM(title)) < 10)
   `);
 
   const tagLog = db.prepare(`
@@ -263,16 +272,16 @@ export function runTaskInference(): { sessionsCreated: number; tasksCreated: num
         state.taskLastOrchTs = 0;
       }
       touchTask.run(row.id, row.duration_ms ?? 0, row.timestamp, state.taskId);
-      // First meaningful description becomes the task title.
-      if (row.description && row.description.trim()) {
+      // First MEANINGFUL description becomes the task title. Skip route
+      // arrows ("→ planner") and boilerplate ("Project Detection", "Reset").
+      if (row.description && isUsefulLabel(row.description)) {
         upgradeBootstrapTitle.run(
-          row.description.slice(0, 80),
+          summarizeForLabel(row.description),
           row.description,
           state.taskId,
         );
-        // Same description, lightly cleaned, becomes the session label —
-        // "Build todo CLI: routing to planner..." → "Build todo CLI".
-        if (isOrchestrator(row.agent_name) && row.action !== 'route') {
+        // Same description, lightly cleaned, becomes the session label.
+        if (isOrchestrator(row.agent_name) && row.action !== 'route' && row.action !== 'delegate') {
           setSessionLabel.run(summarizeForLabel(row.description), state.sessionId);
         }
       }
@@ -290,30 +299,88 @@ export function runTaskInference(): { sessionsCreated: number; tasksCreated: num
   // Back-fill session.label for any session still missing one — covers
   // sessions created by older runs before the label-derivation existed.
   backfillSessionLabels(db);
+  // Same for task titles — older tasks may have route-arrow or null titles.
+  backfillTaskTitles(db);
 
   return { sessionsCreated, tasksCreated, rowsTagged };
 }
 
+/** Boilerplate descriptions we should NOT use as session/task labels. */
+const BOILERPLATE_LABEL_PATTERNS: RegExp[] = [
+  /^project\s+detection/i,
+  /^reset\b/i,
+  /^session\s+(bootstrap|start|init)/i,
+  /^received:\s*$/i,
+  /^→\s*\w+\s*$/,        // pure route arrow
+  /^←\s*\w+\s*$/,        // pure return arrow
+  /^routing\s+to\s+\w+\s*$/i,
+];
+
+function isUsefulLabel(desc: string | null): boolean {
+  if (!desc) return false;
+  const trimmed = desc.trim();
+  if (trimmed.length < 10) return false;
+  return !BOILERPLATE_LABEL_PATTERNS.some((re) => re.test(trimmed));
+}
+
+function backfillTaskTitles(db: Database.Database): void {
+  // Tasks where title is null, too short, or a route-arrow placeholder get
+  // upgraded to the first useful description from any agent in that task.
+  const rows = db.prepare(`
+    SELECT id FROM tasks
+    WHERE title IS NULL
+       OR LENGTH(TRIM(title)) < 10
+       OR title LIKE '→%'
+       OR title LIKE '←%'
+       OR title = 'Session bootstrap'
+       OR title = 'Task'
+  `).all() as Array<{ id: string }>;
+
+  const upd = db.prepare(`UPDATE tasks SET title = ? WHERE id = ?`);
+  const findCandidate = db.prepare(`
+    SELECT description, action FROM agent_log
+    WHERE task_id = ?
+      AND description IS NOT NULL AND TRIM(description) != ''
+    ORDER BY timestamp ASC
+  `);
+  for (const r of rows) {
+    const candidates = findCandidate.all(r.id) as Array<{ description: string; action: string | null }>;
+    const nonRoute = candidates.find(
+      (c) => c.action !== 'route' && c.action !== 'delegate' && isUsefulLabel(c.description),
+    );
+    const useful = nonRoute ?? candidates.find((c) => isUsefulLabel(c.description));
+    if (useful) upd.run(summarizeForLabel(useful.description), r.id);
+  }
+}
+
 function backfillSessionLabels(db: Database.Database): void {
-  // For each session without a label, find the earliest orchestrator log row
-  // in that session that is NOT a delegation, and use its description.
+  // For each session without a label, scan orchestrator entries and pick the
+  // FIRST description that's actually useful (skip routes, boilerplate, too
+  // short).
   const orchAliases = "('orchestrator','atlas','prabowo','prabowo-orchestrator','atlas-orchestrator')";
   const rows = db.prepare(`
-    SELECT s.id AS session_id,
-           (SELECT description FROM agent_log
-            WHERE session_id = s.id
-              AND agent_name IN ${orchAliases}
-              AND COALESCE(action, '') NOT IN ('route', 'delegate')
-              AND description IS NOT NULL AND TRIM(description) != ''
-            ORDER BY timestamp ASC LIMIT 1) AS first_desc
+    SELECT s.id AS session_id
     FROM sessions s
     WHERE s.label IS NULL OR s.label = ''
-  `).all() as Array<{ session_id: string; first_desc: string | null }>;
+  `).all() as Array<{ session_id: string }>;
 
   const upd = db.prepare(`UPDATE sessions SET label = ? WHERE id = ?`);
+  const findCandidate = db.prepare(`
+    SELECT description, action FROM agent_log
+    WHERE session_id = ?
+      AND agent_name IN ${orchAliases}
+      AND description IS NOT NULL AND TRIM(description) != ''
+    ORDER BY timestamp ASC
+  `);
+
   for (const r of rows) {
-    if (!r.first_desc) continue;
-    upd.run(summarizeForLabel(r.first_desc), r.session_id);
+    const candidates = findCandidate.all(r.session_id) as Array<{ description: string; action: string | null }>;
+    // Prefer non-route actions, then any useful description.
+    const nonRoute = candidates.find(
+      (c) => c.action !== 'route' && c.action !== 'delegate' && isUsefulLabel(c.description),
+    );
+    const useful = nonRoute ?? candidates.find((c) => isUsefulLabel(c.description));
+    if (useful) upd.run(summarizeForLabel(useful.description), r.session_id);
   }
 }
 

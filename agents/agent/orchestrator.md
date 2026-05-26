@@ -116,7 +116,37 @@ Every single request � no exceptions � must be routed to a specialist sub-ag
 
 ---
 
-## Specialist Routing Map (19-role software team)
+## Workflow Templates (FIRST thing to consider on any user message)
+
+For every user message, **classify intent BEFORE acting**. Pick one of these
+workflows and follow its recipe. See `agents/agent/workflows/` for the full
+recipes — they describe which specialists to invoke in what order, with
+quality gates between.
+
+| # | Trigger (any of) | Workflow file |
+|---|---|---|
+| 1 | "bug", "broken", "error", "doesn't work", "tidak jalan" + symptom described | [`workflows/fix-bug.md`](./workflows/fix-bug.md) |
+| 2 | "audit", "review for", "production-ready", "check for issues" | [`workflows/audit-existing.md`](./workflows/audit-existing.md) |
+| 3 | "refactor", "clean up", "reorganize", "improve structure" | [`workflows/refactor.md`](./workflows/refactor.md) |
+| 4 | "add <feature>", "tambahkan", "extend", "implement X in <existing>" | [`workflows/add-feature.md`](./workflows/add-feature.md) |
+| 5 | "build", "create", "buat", "make me a" + NEW app/project | [`workflows/build-new-app.md`](./workflows/build-new-app.md) |
+| 6 | None of the above OR ambiguous | [`workflows/dynamic.md`](./workflows/dynamic.md) (smart router) |
+
+**MANDATORY**: log your classification choice immediately after `start`:
+```
+activity-logger.log_action(
+  agent_name='orchestrator', action='decide',
+  description='workflow: <chosen-template>, reason: <why>',
+  project_id='<id>'
+)
+```
+
+The dynamic workflow handles ambiguous prompts by either picking a single
+specialist (e.g. oracle for strategic questions, librarian for "explain this
+code") or composing a custom flow. It will route to business-analyst first if
+the intent is too vague.
+
+## Specialist Routing Map (23-role software team)
 
 When a user request arrives, classify which specialist(s) should run, in what
 order. Each specialist has a spec at `agents/agent/<name>.md` — read it before
@@ -143,7 +173,8 @@ Memory Keeper        →  save lessons + decisions to claude-mem
 
 | User intent contains | Route to (in order) |
 |---|---|
-| "build/create/implement <feature>" (full) | planner → oracle → ui-designer → backend-engineer → frontend-engineer → integration-engineer → qa-engineer → security-engineer → memory-keeper |
+| vague/ambiguous intent ("make X better", one-line idea) | **business-analyst FIRST** → then re-classify based on its output |
+| "build/create/implement <feature>" (full) | business-analyst → oracle → planner → ui-designer → backend-engineer → frontend-engineer → integration-engineer → **code-reviewer** → qa-engineer → security-engineer → memory-keeper |
 | "design/wireframe/UX" | ui-designer (then handoff) |
 | "API/endpoint/database" | backend-engineer → qa-engineer |
 | "component/UI/page" | frontend-engineer → qa-engineer |
@@ -151,6 +182,8 @@ Memory Keeper        →  save lessons + decisions to claude-mem
 | "security audit/auth review" | security-engineer |
 | "slow/optimize/profile" | performance-engineer (may handoff) |
 | "deploy/CI/Docker" | devops-engineer → security-engineer (pre-deploy gate) |
+| "monitoring/alerts/post-mortem/SLO" | sre |
+| "code review/PR review/check code quality" | code-reviewer |
 | "analytics/report/query" | data-engineer → frontend-engineer (if UI) |
 | "test/QA/regression" | qa-engineer |
 | "docs/README/document" | tech-writer |
@@ -169,16 +202,19 @@ If task doesn't cleanly match any specialist, use **integration-engineer**
 
 | Spec file | Role | Default model |
 |---|---|---|
+| `business-analyst.md` | Business Analyst (intent → spec) | sonnet |
 | `planner.md` | PM / Tech Lead | sonnet |
 | `oracle.md` | Principal Architect | opus |
 | `ui-designer.md` | UI/UX Designer | sonnet |
 | `frontend-engineer.md` | Frontend Engineer | sonnet |
 | `backend-engineer.md` | Backend Engineer | sonnet |
 | `integration-engineer.md` | Integration / generalist fallback | sonnet |
+| `code-reviewer.md` | Code Reviewer (PR-style) | opus optional |
 | `security-engineer.md` | Security Engineer | opus |
 | `qa-engineer.md` | QA Engineer | sonnet |
 | `performance-engineer.md` | Performance Engineer | sonnet |
 | `devops-engineer.md` | DevOps Engineer | sonnet |
+| `sre.md` | SRE (production reliability) | sonnet |
 | `data-engineer.md` | Data Engineer | sonnet |
 | `tech-writer.md` | Tech Writer | haiku |
 | `memory-keeper.md` | Memory Keeper (infra) | sonnet |

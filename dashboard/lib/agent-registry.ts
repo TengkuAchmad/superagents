@@ -235,7 +235,7 @@ export const AGENT_REGISTRY: AgentMeta[] = [
     role: 'CI/CD & Deploy',
     icon: '🚢',
     color: '#eab308',
-    variants: ['devops-engineer', 'devops', 'sre'],
+    variants: ['devops-engineer', 'devops'],
   },
   {
     canonical_id: 'data-engineer',
@@ -272,6 +272,35 @@ export const AGENT_REGISTRY: AgentMeta[] = [
     icon: '📚',
     color: '#71717a',
     variants: ['tech-writer', 'writer', 'docs-writer'],
+  },
+
+  // ── Phase 2 specialists (business + quality + reliability) ────────────────
+  {
+    canonical_id: 'business-analyst',
+    opencode_key: 'business-analyst',
+    label: 'Business Analyst',
+    role: 'Intent → Spec',
+    icon: '🧭',
+    color: '#a855f7',
+    variants: ['business-analyst', 'ba', 'analyst-business'],
+  },
+  {
+    canonical_id: 'code-reviewer',
+    opencode_key: 'code-reviewer',
+    label: 'Code Reviewer',
+    role: 'PR Review & Quality',
+    icon: '🔍',
+    color: '#16a34a',
+    variants: ['code-reviewer', 'reviewer', 'pr-reviewer'],
+  },
+  {
+    canonical_id: 'sre',
+    opencode_key: 'sre',
+    label: 'SRE',
+    role: 'Reliability & Incidents',
+    icon: '🚨',
+    color: '#dc2626',
+    variants: ['sre', 'reliability-engineer', 'site-reliability'],
   },
 ];
 
