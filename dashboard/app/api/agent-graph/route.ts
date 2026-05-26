@@ -106,6 +106,23 @@ function extractTarget(description: string | null, result: string | null): strin
   return null;
 }
 
+/** Detect "received from <agent>" / "← <agent>" patterns → return-edge source. */
+function extractReturnSource(description: string | null, result: string | null): string | null {
+  const text = `${description ?? ''} ${result ?? ''}`.toLowerCase();
+  const patterns: RegExp[] = [
+    /received\s+from\s+([a-z][\w-]*)/,
+    /returned\s+(?:from\s+)?([a-z][\w-]*)/,
+    /←\s*([a-z][\w-]*)/,
+    /<-\s*([a-z][\w-]*)/,
+    /([a-z][\w-]*)\s+returned/,
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) return ROLE_CANON[m[1]] ?? VARIANT_TO_ID[m[1]] ?? null;
+  }
+  return null;
+}
+
 function classifyEdge(action: string | null, status: string | null): 'delegate' | 'complete' | 'failed' {
   if (status === 'failed') return 'failed';
   if (action === 'complete' || status === 'completed') return 'complete';
@@ -233,20 +250,23 @@ export async function GET(request: Request) {
 
     // 5. Edges
     const routingRows = db.prepare(`
-      SELECT agent_name, description, result, status, duration_ms, timestamp
+      SELECT agent_name, action, description, result, status, duration_ms, timestamp
       FROM agent_log
       WHERE (
         action IN ('route', 'complete', 'delegate', 'decompose', 'execute_plan')
         OR description LIKE '%→%'
+        OR description LIKE '%←%'
         OR description LIKE '%routing to%'
         OR description LIKE '%routed to%'
         OR description LIKE '%delegat%'
+        OR description LIKE '%received from%'
+        OR description LIKE '%returned%'
       )
       AND timestamp > datetime('now', '-24 hours')
       ${projectFilter}
       ORDER BY timestamp DESC
       LIMIT 500
-    `).all(...args) as RoutingRow[];
+    `).all(...args) as Array<RoutingRow & { action: string | null }>;
 
     interface EdgeAgg {
       count: number;
@@ -256,14 +276,30 @@ export async function GET(request: Request) {
       total_duration_ms: number;
       duration_samples: number;
       last_ts: string;
+      is_return: boolean;
     }
     const edgeMap = new Map<string, EdgeAgg>();
     for (const r of routingRows) {
       const srcId = resolveId(r.agent_name);
-      const tgtId = extractTarget(r.description, r.result);
-      if (!tgtId || tgtId === srcId) continue;
 
-      const key = `${srcId}→${tgtId}`;
+      // First try forward routing ("→ target" / "routing to target").
+      // If not found, try return pattern ("received from source") — emit
+      // as an edge BACK to this row's agent (orchestrator typically).
+      let edgeSrc = srcId;
+      let edgeTgt = extractTarget(r.description, r.result);
+      let isReturn = false;
+
+      if (!edgeTgt && r.action === 'complete') {
+        const returnFrom = extractReturnSource(r.description, r.result);
+        if (returnFrom && returnFrom !== srcId) {
+          edgeSrc = returnFrom;
+          edgeTgt = srcId;
+          isReturn = true;
+        }
+      }
+      if (!edgeTgt || edgeTgt === edgeSrc) continue;
+
+      const key = `${edgeSrc}→${edgeTgt}${isReturn ? '·ret' : ''}`;
       const rt = classifyEdge(null, r.status);
       const dur = r.duration_ms ?? 0;
       const existing = edgeMap.get(key);
@@ -277,17 +313,20 @@ export async function GET(request: Request) {
         edgeMap.set(key, {
           count: 1,
           status: r.status === 'started' ? 'started' : 'completed',
-          action: r.description?.slice(0, 40) ?? 'route',
+          action: r.description?.slice(0, 40) ?? (isReturn ? 'return' : 'route'),
           route_type: rt,
           total_duration_ms: dur,
           duration_samples: dur > 0 ? 1 : 0,
           last_ts: r.timestamp,
+          is_return: isReturn,
         });
       }
     }
 
     const edges = Array.from(edgeMap.entries()).map(([key, val]) => {
-      const [source, target] = key.split('→');
+      // Key format: "src→tgt" or "src→tgt·ret"; the suffix marks return edges.
+      const stripped = key.replace(/·ret$/, '');
+      const [source, target] = stripped.split('→');
       const avg = val.duration_samples > 0 ? Math.round(val.total_duration_ms / val.duration_samples) : null;
       return {
         source, target,
@@ -297,6 +336,7 @@ export async function GET(request: Request) {
         route_type: val.route_type,
         avg_duration_ms: avg,
         last_ts: val.last_ts,
+        is_return: val.is_return,
       };
     });
 

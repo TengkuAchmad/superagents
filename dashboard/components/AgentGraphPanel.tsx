@@ -56,6 +56,9 @@ interface GraphEdge {
   route_type: 'delegate' | 'complete' | 'failed';
   avg_duration_ms: number | null;
   last_ts: string;
+  /** When true, this edge represents a return flow (sub-agent → orchestrator)
+   *  instead of a forward delegation. Rendered with a softer, dashed style. */
+  is_return?: boolean;
 }
 
 interface StaticEdge { source: string; target: string }
@@ -299,31 +302,40 @@ function buildElements(data: GraphData, opts: BuildOpts): { nodes: AgentFlowNode
       const lastTs = e.last_ts ? new Date(e.last_ts.includes('T') ? e.last_ts : e.last_ts.replace(' ', 'T') + 'Z').getTime() : 0;
       const isRecent = lastTs > 0 && now - lastTs < RECENT_MS;
       const shouldGlow = isInFlight || isRecent;
+      const isReturn = e.is_return === true;
+      // Return edges use a softer emerald (work flowing back to orchestrator).
       const color =
         e.route_type === 'failed' ? '#ef4444' :
+        isReturn ? '#10b981' :
         isInFlight ? '#6366f1' :
         isRecent ? '#818cf8' :       // softer indigo for recent-but-done
         e.route_type === 'complete' ? '#475569' : '#334155';
       const avg = e.avg_duration_ms ? ` · avg ${(e.avg_duration_ms / 1000).toFixed(1)}s` : '';
+      const labelPrefix = isReturn ? '↩ ' : '';
       return {
-        id: `live-${e.source}-${e.target}`,
+        id: `live-${e.source}-${e.target}${isReturn ? '-ret' : ''}`,
         source: e.source,
         target: e.target,
         animated: shouldGlow,
         // Apply Safari-safe class for failed glow variant (separate keyframe).
         className: e.route_type === 'failed' ? 'agn-edge-failed' : undefined,
-        label: `${e.count}×${avg}`,
+        label: `${labelPrefix}${e.count}×${avg}`,
         markerEnd: { type: MarkerType.ArrowClosed, color, width: 16, height: 16 },
         style: {
           stroke: color,
           // `color` drives the CSS `drop-shadow(... currentColor)` for the
           // inner crisp glow layers — works in Safari/Chrome/Firefox.
           color,
-          strokeWidth: isInFlight ? 3 : isRecent ? 2.2 : 1.5,
+          // Return edges render thinner — they are confirmation flow, not
+          // primary delegation. They still glow when recent so the viewer
+          // sees the round-trip closing.
+          strokeWidth: isReturn ? (shouldGlow ? 2 : 1) : isInFlight ? 3 : isRecent ? 2.2 : 1.5,
           // `'0'` instead of `'none'` because Safari ignores `none` here.
-          // Failed gets a visible dash to read as "broken connection".
+          // Failed gets a visible dash; return edges get a long-dash to
+          // visually distinguish from forward delegation.
           strokeDasharray: e.route_type === 'failed'
             ? '4 3'
+            : isReturn ? '6 6'
             : shouldGlow ? '0' : undefined,
         },
         labelStyle: { fill: '#94a3b8', fontSize: 10, fontFamily: 'monospace' },
