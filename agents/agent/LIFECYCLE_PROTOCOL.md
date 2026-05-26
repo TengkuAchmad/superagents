@@ -5,25 +5,50 @@
 > can render a coherent task graph + timeline ("Must Team Workflow") without
 > per-agent special-casing.
 
-## Reality check: REAL vs VISUAL delegation
+## How delegation actually works (opencode 1.15+)
 
-The opencode + oh-my-openagent plugin currently exposes only **two** callable
-sub-agents via `call_omo_agent`: `librarian` and `explore`. There is **no
-`task()` tool** for invoking planner / executor / oracle / memory-keeper as
-separate model calls.
+opencode has a native `task` tool. Every agent in `agents/agent/*.md` with
+`mode: subagent` is callable from a primary agent (orchestrator or
+init-project) via:
 
-This means delegation in this system comes in two flavors:
+```
+task(<agent-name>, '<task description + project_id + any context>')
+```
 
-| Flavor | What happens | When to use |
-|---|---|---|
-| **REAL** — `call_omo_agent('librarian'\|'explore', ...)` or `skill('/claude-mem:make-plan'\|'/do'\|'/pathfinder'\|...)` | A separate model call is spawned with isolated context. Token + cost are tracked per-call. True parallelism / context isolation. | Heavy work: multi-file plans, big refactors, architecture reasoning. |
-| **VISUAL** — `activity-logger.log_action(action='route', description='→ <agent>')` | Atlas (or any agent) emits a log row that the dashboard reads as a delegation edge in the graph. No new model call — the same agent keeps working. | Documenting WORKFLOW PHASES (plan→execute→review) for human readability and audit trails, even when one agent does all the work. |
+The sub-agent runs as a **separate model invocation** with its own model,
+tools, and isolated context, then returns its result to the caller. This is
+real delegation, not role-switching.
 
-**Both are legitimate.** Use REAL when you need actual parallelism / context
-isolation. Use VISUAL when you just want the graph to show the logical flow.
+Before any `task()` call, the caller MUST log the routing intent so the
+dashboard draws the edge:
 
-Mix them: log VISUAL "→ planner" before calling REAL `skill('/claude-mem:make-plan')`,
-so the graph shows the edge AND the work happens in an isolated call.
+```
+activity-logger.log_action(
+  agent_name='<caller>', action='route',
+  description='→ <target-agent>: <one-line>', project_id='<id>'
+)
+task('<target-agent>', '<full prompt with context + project_id>')
+activity-logger.log_action(
+  agent_name='<caller>', action='complete',
+  description='<target> returned: <summary>', status='completed',
+  project_id='<id>'
+)
+```
+
+The sub-agent itself logs its own `start` and `complete` (per this protocol),
+so you end up with 4 log rows per delegation:
+1. caller → route
+2. sub-agent → start
+3. sub-agent → complete
+4. caller → complete
+
+That gives the dashboard everything it needs to draw nodes + edges + token
+distribution per role.
+
+> Earlier protocol versions said `task()` didn't exist and recommended
+> `skill()` workarounds. That guidance was based on a weak fallback model
+> (DeepSeek free) that lacked the tool. On a proper model
+> (Sonnet/Opus/Gemini 2.5+), `task()` works natively.
 
 The dashboard's interpreter lives in `dashboard/lib/lifecycle-events.ts` and
 maps your raw log values into a fixed vocabulary. As long as your `action` and

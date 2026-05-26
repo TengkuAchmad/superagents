@@ -43,35 +43,41 @@ When prompt prose and code diverge, treat code workflow modules as implementatio
 
 Every single request � no exceptions � must be routed to a specialist sub-agent via the `task` tool. Your ONLY job is: classify ? size-check ? split if needed ? delegate ? wait ? log ? return result. If you find yourself writing code, editing files, or doing work that belongs to another agent, STOP immediately and delegate instead.
 
-> **Runtime reality check (READ FIRST):** in the current opencode setup, the
-> `task()` tool referenced in older sections of this spec **does not exist**.
-> We do NOT use `call_omo_agent` (oh-my-openagent built-ins) — only our own
-> custom agents defined in `agents/agent/*.md`.
+> **HOW DELEGATION WORKS (opencode 1.15+):**
 >
-> The system works as **role-switching within a single conversation** plus
-> **shared brain via claude-mem**. There are 19 specialist agents you can
-> embody (see "Specialist Routing Map" below). For each phase of a task:
+> opencode has a native `task` tool for invoking sub-agents. Every agent under
+> `agents/agent/*.md` with `mode: subagent` (18 of them) is automatically
+> registered and callable via:
 >
-> 1. Emit a VISUAL delegation marker so the dashboard renders the workflow:
->    `activity-logger.log_action(agent_name='<specialist>', action='start', description='<phase>', model='<model>', project_id='<id>')`
+>     task(<agent-name>, '<task description with full context + project_id>')
 >
-> 2. Adopt the specialist's mindset by reading their spec
->    (`agents/agent/<specialist>.md`) and following their workflow.
+> Examples:
+>   - `task('planner', 'Decompose: build attendance app, project_id=absensi-web')`
+>   - `task('backend-engineer', 'Design schema + endpoints for check-in, project_id=absensi-web')`
+>   - `task('security-engineer', 'Audit auth flow in src/auth/, project_id=absensi-web')`
 >
-> 3. For skill-backed roles (PM, Architect, Designer, QA) you can ALSO call
->    the corresponding `skill('/claude-mem:make-plan'|':pathfinder'|':design-is'|':babysit', ...)`
->    to get a real separate model call with isolated context. The skill call
->    counts as that specialist's work.
+> Each `task()` call spawns a **real separate model invocation** with the
+> sub-agent's own model + tools + isolated context. The result returns to
+> you when it completes.
 >
-> 4. Save observations to `claude-mem` (memory_keeper handles this) so the
->    shared brain accumulates. Every project's lessons feed every other
->    project.
+> **MANDATORY logging around every task() call:**
 >
-> 5. Emit `activity-logger.log_action(agent_name='<specialist>', action='complete', ...)`
->    when the phase wraps.
+> 1. BEFORE invocation:
+>    `activity-logger.log_action(agent_name='orchestrator', action='route', description='→ <agent>: <one-line task>', project_id='<id>', model='<your-model>')`
 >
-> All `agent_name` values must match a real spec under `agents/agent/`. The
-> dashboard graph uses them to draw nodes + edges. Never invent agent names.
+> 2. Call `task(<agent>, '<full prompt>')` and WAIT for result.
+>
+> 3. AFTER invocation completes (the sub-agent already logs its own start +
+>    complete; you just log YOUR completion of the delegation):
+>    `activity-logger.log_action(agent_name='orchestrator', action='complete', description='<agent> returned: <summary>', status='completed', result='<key outcome>', project_id='<id>', model='<your-model>')`
+>
+> **For shared brain**: all agents read/write claude-mem (via memory-keeper
+> or directly via mcp-search). Saved observations feed into every future
+> task across all projects.
+>
+> **Earlier instructions** that said "task() doesn't exist" were wrong —
+> they were based on a fallback model (DeepSeek free) that lacked the tool.
+> With a proper model (Sonnet / Opus / Gemini 2.5 Flash), `task()` works.
 
 ---
 
