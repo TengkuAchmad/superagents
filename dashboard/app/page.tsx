@@ -23,6 +23,16 @@ import {
   Trash2,
   Users,
   Check,
+  // Icons for specialist agents
+  Palette,
+  Globe,
+  Server,
+  Plug,
+  Shield,
+  Ship,
+  TestTube,
+  Gauge,
+  FileText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -160,6 +170,7 @@ interface MCPStatus {
 
 // ── Agent Icon Map (keyed by canonical_id from agent-registry.ts) ─────────────
 const AGENT_ICON_MAP: Record<string, LucideIcon> = {
+  // Senior's original 10
   orchestrator: Monitor,
   planner: BarChart3,
   executor: Wrench,
@@ -171,6 +182,17 @@ const AGENT_ICON_MAP: Record<string, LucideIcon> = {
   explorer: Bot,
   analyst: Bot,
   init: Cpu,
+  // New 10 specialists
+  'ui-designer': Palette,
+  'frontend-engineer': Globe,
+  'backend-engineer': Server,
+  'integration-engineer': Plug,
+  'security-engineer': Shield,
+  'devops-engineer': Ship,
+  'data-engineer': Database,
+  'qa-engineer': TestTube,
+  'performance-engineer': Gauge,
+  'tech-writer': FileText,
 };
 
 const DEFAULT_AGENT_NAMES: Record<string, string> = Object.fromEntries(
@@ -264,6 +286,87 @@ const AGENT_METADATA: Record<string, AgentMeta> = {
     role: 'Analyst',
     description: 'Analyzes images, PDFs, and documents thoroughly. Stores extracted key information in memory so the team can reference it without re-analyzing the same file.',
     skills: ['image analysis', 'PDF reading', 'document extraction', 'structured reports'],
+    model: 'Claude Haiku 4.5',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  // ── New 10 specialists ─────────────────────────────────────────────────────
+  'ui-designer': {
+    internalKey: 'ui-designer',
+    role: 'UI/UX Designer',
+    description: 'Designs user flows, visual hierarchy, accessibility, and design systems. Produces specs that frontend-engineer implements — never writes UI code directly.',
+    skills: ['user flows', 'wireframes', 'accessibility audit', 'design system', 'shadcn/ui'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'frontend-engineer': {
+    internalKey: 'frontend-engineer',
+    role: 'Frontend Engineer',
+    description: 'Implements UI components, client-side state, routing, and frontend integration per the ui-designer spec. Component-first, accessibility-in-code.',
+    skills: ['React/Next.js', 'state management', 'routing', 'Tailwind', 'shadcn/ui', 'forms'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'backend-engineer': {
+    internalKey: 'backend-engineer',
+    role: 'Backend Engineer',
+    description: 'Owns DB schema, API endpoints, business logic, and data validation. Schema-first, every external input validated, migrations are forever.',
+    skills: ['Prisma/Drizzle', 'API design', 'SQL', 'zod validation', 'migrations'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'integration-engineer': {
+    internalKey: 'integration-engineer',
+    role: 'Integration Engineer',
+    description: 'Wires backend ↔ frontend, integrates third-party services, builds e2e flows. Also serves as generalist fallback when task does not fit a single specialist.',
+    skills: ['e2e wiring', 'OAuth', 'webhooks', 'API clients', 'react-query/SWR'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'security-engineer': {
+    internalKey: 'security-engineer',
+    role: 'Security Engineer',
+    description: 'Adversarial mindset — runs OWASP-style audits, threat models, secret reviews. Gates deploys with severity-rated findings. Uses Opus for careful reasoning.',
+    skills: ['OWASP top 10', 'threat modeling', 'auth audit', 'secrets', 'dependency CVE'],
+    model: 'Claude Opus 4.6',
+    fallback: 'Claude Sonnet 4.6',
+  },
+  'devops-engineer': {
+    internalKey: 'devops-engineer',
+    role: 'DevOps Engineer',
+    description: 'Owns CI/CD pipelines, Docker, deploy targets, env management, monitoring. Reproducible, fast feedback, secrets never in repo.',
+    skills: ['GitHub Actions', 'Docker', 'Vercel/Fly/Railway', 'env management', 'monitoring'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'data-engineer': {
+    internalKey: 'data-engineer',
+    role: 'Data Engineer',
+    description: 'Owns analytics queries, ETL pipelines, query optimization, data modeling. Measure first via EXPLAIN ANALYZE, idempotent backfills, justify every index.',
+    skills: ['SQL aggregation', 'EXPLAIN ANALYZE', 'ETL', 'indexes', 'DuckDB/Postgres'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'qa-engineer': {
+    internalKey: 'qa-engineer',
+    role: 'QA Engineer',
+    description: 'Adversarial about user behavior — writes test plans, runs functional + regression tests, gates releases. Test pyramid awareness, every bug is reproducible.',
+    skills: ['Vitest/Jest', 'Playwright', 'edge cases', 'test plans', 'bug filing'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'performance-engineer': {
+    internalKey: 'performance-engineer',
+    role: 'Performance Engineer',
+    description: 'Measures first, optimizes the right axis (wallclock/CPU/memory/bundle/network). 80/20 hot path focus, every optimization tracked vs baseline.',
+    skills: ['Lighthouse', 'DevTools profiling', 'bundle analysis', 'load testing', 'optimization'],
+    model: 'Claude Sonnet 4.6',
+    fallback: 'Gemini 2.5 Flash',
+  },
+  'tech-writer': {
+    internalKey: 'tech-writer',
+    role: 'Tech Writer',
+    description: 'Translates technical reality into clear documentation — README, API ref, user guides, changelog. Reader-first, every example copy-paste runnable.',
+    skills: ['README', 'API reference', 'user guides', 'changelogs', 'docs maintenance'],
     model: 'Claude Haiku 4.5',
     fallback: 'Claude Sonnet 4.6',
   },

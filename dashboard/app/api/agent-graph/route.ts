@@ -49,6 +49,7 @@ interface PlanRow {
 // ── Role alias map (all spellings → canonical_id) ────────────────────────────
 
 const ROLE_CANON: Record<string, string> = {
+  // Senior's original 10
   orchestrator: 'orchestrator', atlas: 'orchestrator', prabowo: 'orchestrator',
   'prabowo-orchestrator': 'orchestrator', 'atlas-orchestrator': 'orchestrator',
   planner: 'planner', prometheus: 'planner', gibran: 'planner',
@@ -65,6 +66,17 @@ const ROLE_CANON: Record<string, string> = {
   librarian: 'librarian', bakom: 'librarian',
   analyst: 'analyst', 'multimodal-looker': 'analyst',
   'init-project': 'init', init: 'init',
+  // New 10 specialists
+  'ui-designer': 'ui-designer', designer: 'ui-designer', 'ux-designer': 'ui-designer',
+  'frontend-engineer': 'frontend-engineer', frontend: 'frontend-engineer', 'fe-engineer': 'frontend-engineer',
+  'backend-engineer': 'backend-engineer', backend: 'backend-engineer', 'be-engineer': 'backend-engineer',
+  'integration-engineer': 'integration-engineer', integration: 'integration-engineer', 'glue-engineer': 'integration-engineer',
+  'security-engineer': 'security-engineer', security: 'security-engineer', 'sec-engineer': 'security-engineer',
+  'devops-engineer': 'devops-engineer', devops: 'devops-engineer', sre: 'devops-engineer',
+  'data-engineer': 'data-engineer', data: 'data-engineer', 'data-analyst': 'data-engineer',
+  'qa-engineer': 'qa-engineer', qa: 'qa-engineer', tester: 'qa-engineer',
+  'performance-engineer': 'performance-engineer', performance: 'performance-engineer', 'perf-engineer': 'performance-engineer',
+  'tech-writer': 'tech-writer', writer: 'tech-writer', 'docs-writer': 'tech-writer',
 };
 
 function resolveId(raw: string): string {
