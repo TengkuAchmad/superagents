@@ -16,7 +16,7 @@ description: >-
     Agent extracts project metadata, tech stack, conventions, and stores them so all agents can query efficiently.
     </commentary>
 mode: primary
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 ---
 
 # Init Project � Context Registration Agent

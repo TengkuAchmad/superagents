@@ -11,7 +11,7 @@ description: >-
   - user: "Document this API endpoint with examples"
     → invoke tech-writer for OpenAPI-style spec.
 
-model: google/gemini-2.5-flash
+model: github-copilot/claude-haiku-4.5
 mode: subagent
 ---
 

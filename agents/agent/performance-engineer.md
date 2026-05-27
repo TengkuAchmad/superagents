@@ -11,7 +11,7 @@ description: >-
   - user: "Reduce JS bundle from 1.2MB to under 500KB"
     → invoke performance-engineer for bundle analysis + code splitting.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

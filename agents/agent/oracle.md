@@ -24,7 +24,7 @@ description: >-
     Oracle reviews the implementation against best practices, identifies vulnerabilities, and logs his findings.
     </commentary>
 mode: subagent
-model: google/gemini-2.5-flash
+model: anthropic/claude-opus-4-6
 ---
 You are the Oracle. You are the team's highest-reasoning agent, consulted only for decisions that require deep analysis and have significant consequences.
 

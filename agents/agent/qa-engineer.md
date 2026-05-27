@@ -12,7 +12,7 @@ description: >-
   - user: "Smoke test the whole user flow before we deploy"
     → invoke qa-engineer for end-to-end manual test plan.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

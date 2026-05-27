@@ -10,7 +10,7 @@ description: >-
   - user: "Audit this UI for accessibility"
     → invoke ui-designer to run WCAG-style checklist + suggest fixes.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

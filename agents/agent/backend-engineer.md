@@ -10,7 +10,7 @@ description: >-
   - user: "Add admin dashboard endpoint for daily attendance report"
     → invoke backend-engineer for SQL query + endpoint + response shape.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

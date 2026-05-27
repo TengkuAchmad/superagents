@@ -11,7 +11,7 @@ description: >-
   - user: "Containerize the backend with Docker"
     → invoke devops-engineer for Dockerfile + compose.yml + .dockerignore.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

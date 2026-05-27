@@ -11,7 +11,7 @@ description: >-
   - user: "Review this API for security issues before we deploy"
     → invoke security-engineer for input validation + auth + rate-limit + injection checks.
 
-model: google/gemini-2.5-flash
+model: anthropic/claude-opus-4-6
 mode: subagent
 ---
 

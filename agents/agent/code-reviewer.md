@@ -13,7 +13,7 @@ description: >-
   - After frontend-engineer + backend-engineer complete a feature
     → orchestrator routes through code-reviewer before QA.
 
-model: anthropic/claude-sonnet-4-6
+model: anthropic/claude-opus-4-6
 mode: subagent
 ---
 
