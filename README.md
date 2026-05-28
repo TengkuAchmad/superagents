@@ -2,6 +2,12 @@
 
 A production-ready, multi-agent orchestration platform built on OpenCode with Model Context Protocol (MCP) integrations. It structures autonomous AI agents into a collaborative cabinet hierarchy — enabling intelligent task decomposition, persistent cross-session memory, strategic reasoning, token-efficient file access, and a full auditable decision trail.
 
+> **Mau replikasi setup ini di mesin lain?** → Baca **[SETUP.md](SETUP.md)** untuk panduan ringkas 6-step (clone, API key, profile, start TUI, test delegation, dashboard).
+>
+> **Mau ganti model profile?** → Baca **[CARA_GANTI_MODEL.md](CARA_GANTI_MODEL.md)** untuk cheatsheet lengkap.
+>
+> **CATATAN PENTING:** Section di README ini yang mention `oh-my-openagent` plugin **sudah outdated** sejak commit `2a311f5` (2026-05-27). Plugin tersebut dihapus karena memblok native `task` tool. Sumber kebenaran sekarang ada di `SETUP.md`. Sub-agent dipanggil via `mcp__oc__task` dengan `subagent_type="agent/<nama>"` (wajib prefix `agent/`).
+
 ---
 
 ## Table of Contents
