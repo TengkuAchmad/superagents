@@ -12,7 +12,7 @@ description: >-
   - user: "We had an outage at 2am — write the post-mortem"
     → invoke sre to structure timeline + root cause + action items.
 
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 mode: subagent
 ---
 

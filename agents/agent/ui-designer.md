@@ -10,7 +10,7 @@ description: >-
   - user: "Audit this UI for accessibility"
     → invoke ui-designer to run WCAG-style checklist + suggest fixes.
 
-model: opencode/deepseek-v4-flash-free
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

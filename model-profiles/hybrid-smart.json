@@ -1,0 +1,105 @@
+{
+  "$schema": "Hybrid: Claude Opus untuk agent yang berpikir berat (planning, audit, review), Claude Sonnet untuk yang sering dipanggil (orchestrator routing), Groq free tier untuk eksekusi. Filosofi: bayar mahal di tempat dimana kualitas reasoning paling berdampak (planning + review), gratis di tempat dimana clarity prompt sudah ditentukan thinker. Requires: Claude Max subscription + GROQ_API_KEY.",
+  "default": {
+    "model": "groq/llama-3.3-70b-versatile",
+    "fallback_models": [
+      { "model": "groq/qwen-2.5-32b" },
+      { "model": "groq/gemma2-9b-it" },
+      { "model": "opencode/deepseek-v4-flash-free" }
+    ]
+  },
+  "overrides": {
+    "oracle": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Architectural decisions punya leverage tinggi. Salah pilih state-mgmt strategy = ratusan jam refactor. Worth $15/M token."
+    },
+    "planner": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Kualitas task decomposition menentukan kualitas semua eksekusi downstream. Prompt yang dihasilkan harus self-contained + detail. Worth premium."
+    },
+    "business-analyst": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — PRD ambigu = produk salah dibangun. Edge case discovery butuh deep reasoning."
+    },
+    "code-reviewer": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Menemukan bug subtle (race condition, security flaw, leak) butuh pemahaman mendalam — kemampuan utama Opus."
+    },
+    "security-engineer": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Adversarial thinking + threat modeling. Cost satu CVE > 1000× cost Opus call."
+    },
+    "orchestrator": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "SONNET ROUTER — Dipanggil tiap user message (high volume). Sonnet capable untuk routing decisions, lebih murah dari Opus. Prompt caching efektif karena system prompt jarang berubah."
+    },
+    "ui-designer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "SONNET TASTE — Design spec butuh taste + struktur, Sonnet cukup. Tidak butuh reasoning sedalam Opus."
+    },
+    "frontend-engineer": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "GROQ FREE — Coding specialist, free di Groq. Asumsi: prompt dari planner detail enough (file path, function signature, edge case). Qwen 32B handles React/TS/Three.js dengan baik kalau spec jelas."
+    },
+    "backend-engineer": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "GROQ FREE — API/DB implementation. Qwen 32B excels di server-side code."
+    },
+    "executor": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "GROQ FREE — Generic code execution dari plan detail."
+    },
+    "integration-engineer": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Wiring antar component. Llama 70B understands cross-module context cukup."
+    },
+    "qa-engineer": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Test execution + bug identification dari output. Tidak butuh reasoning sedalam reviewer."
+    },
+    "data-engineer": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Data pipeline + DB schema implementation."
+    },
+    "devops-engineer": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Deploy script, CI/CD config. Pattern-based, Llama 70B cukup."
+    },
+    "sre": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Monitoring + reliability checks. Llama capable untuk YAML/config."
+    },
+    "performance-engineer": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Profiling + bottleneck identification dari trace output."
+    },
+    "librarian": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Tool-heavy (Read/Grep/Glob). Llama 70B reliable untuk tool use chaining."
+    },
+    "task-runner": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — Atomic single-tool ops. Llama 70B karena tool use butuh reliability."
+    },
+    "init-project": {
+      "model": "groq/llama-3.3-70b-versatile",
+      "_note": "GROQ FREE — npm create, scaffold via bash. Llama 70B karena scaffolding butuh tool use yang reliable."
+    },
+    "tech-writer": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "GROQ FREE LIGHTWEIGHT — Doc writing dari code. Formulaic, gemma 9B cukup. Speed-optimized."
+    },
+    "chronicler": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "GROQ FREE LIGHTWEIGHT — Log event ke memory. Minimal reasoning."
+    },
+    "analyst": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "GROQ FREE LIGHTWEIGHT — Read DB query results, simple summary."
+    },
+    "memory-keeper": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "GROQ FREE LIGHTWEIGHT — Save observation, tag management."
+    }
+  }
+}

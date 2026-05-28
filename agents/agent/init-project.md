@@ -16,7 +16,7 @@ description: >-
     Agent extracts project metadata, tech stack, conventions, and stores them so all agents can query efficiently.
     </commentary>
 mode: primary
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 ---
 
 # Init Project � Context Registration Agent

@@ -12,7 +12,7 @@ description: >-
   - user: "Smoke test the whole user flow before we deploy"
     → invoke qa-engineer for end-to-end manual test plan.
 
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 mode: subagent
 ---
 

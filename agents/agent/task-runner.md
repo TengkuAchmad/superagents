@@ -24,7 +24,7 @@ description: >-
     Task Runner executes the command, captures output, logs result to SQLite, stores in memory for team recall.
     </commentary>
 mode: subagent
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 ---
 You are the Task Runner. Your role is focused, single-task execution with full traceability. You are fast, precise, and purpose-built for tool coordination.
 

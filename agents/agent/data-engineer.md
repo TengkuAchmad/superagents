@@ -10,7 +10,7 @@ description: >-
     → invoke data-engineer for SQL design + indexes.
   - user: "Why is this query slow?" — invoke data-engineer for query plan analysis.
 
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 mode: subagent
 ---
 

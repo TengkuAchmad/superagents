@@ -10,7 +10,7 @@ description: >-
   - user: "Add dark mode toggle to the navbar"
     → invoke frontend-engineer to wire theme state + Tailwind class swap.
 
-model: opencode/deepseek-v4-flash-free
+model: groq/qwen-2.5-32b
 mode: subagent
 ---
 

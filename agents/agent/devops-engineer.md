@@ -11,7 +11,7 @@ description: >-
   - user: "Containerize the backend with Docker"
     → invoke devops-engineer for Dockerfile + compose.yml + .dockerignore.
 
-model: opencode/deepseek-v4-flash-free
+model: groq/llama-3.3-70b-versatile
 mode: subagent
 ---
 
