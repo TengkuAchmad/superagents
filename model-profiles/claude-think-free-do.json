@@ -1,0 +1,125 @@
+{
+  "$schema": "Claude untuk thinking, opencode/ free models untuk eksekusi. NO Google, NO Groq, NO OpenRouter. Requires: Claude Max subscription + OPENCODE_API_KEY (built-in opencode/ provider) — gratis tanpa daftar tambahan. Filosofi: bayar Claude di tempat yang butuh reasoning, gratis untuk semua eksekusi.",
+  "default": {
+    "model": "opencode/kimi-k2.5-free",
+    "fallback_models": [
+      { "model": "opencode/mimo-v2.5-free" },
+      { "model": "opencode/glm-4.7-free" },
+      { "model": "opencode/qwen3.6-plus-free" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" },
+      { "model": "opencode/big-pickle" }
+    ]
+  },
+  "overrides": {
+    "oracle": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Architectural decisions punya leverage tinggi."
+    },
+    "planner": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Quality decomposition menentukan eksekusi downstream."
+    },
+    "business-analyst": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — PRD ambigu = produk salah. Edge case discovery butuh deep reasoning."
+    },
+    "code-reviewer": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Menemukan bug subtle (race condition, security, leak) — kemampuan utama Opus."
+    },
+    "security-engineer": {
+      "model": "anthropic/claude-opus-4-6",
+      "_note": "OPUS THINKER — Adversarial thinking + threat modeling."
+    },
+    "orchestrator": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "SONNET ROUTER — High volume (tiap user message). Sonnet capable + cache-friendly."
+    },
+    "ui-designer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "SONNET TASTE — Design spec butuh taste + struktur. Sonnet cukup."
+    },
+    "frontend-engineer": {
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": [
+        { "model": "opencode/qwen3.6-plus-free" },
+        { "model": "opencode/grok-code" },
+        { "model": "opencode/big-pickle" },
+        { "model": "opencode/kimi-k2.5-free" }
+      ],
+      "_note": "FREE CODING — Mimo v2 Pro 1M context, handle React/TS/Three.js. Fallback ke Qwen 3.6 coding + Grok-code."
+    },
+    "backend-engineer": {
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback_models": [
+        { "model": "opencode/qwen3.6-plus-free" },
+        { "model": "opencode/grok-code" },
+        { "model": "opencode/big-pickle" },
+        { "model": "opencode/kimi-k2.5-free" }
+      ],
+      "_note": "FREE CODING — Same chain. 1M context handle besar codebases tanpa truncation."
+    },
+    "executor": {
+      "model": "opencode/grok-code",
+      "fallback_models": [
+        { "model": "opencode/mimo-v2-pro-free" },
+        { "model": "opencode/qwen3.6-plus-free" },
+        { "model": "opencode/kimi-k2.5-free" }
+      ],
+      "_note": "FREE CODING — Grok-code (256K, optimized code execution). Mimo as backup."
+    },
+    "integration-engineer": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Kimi 262K context. Cross-module wiring."
+    },
+    "qa-engineer": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Test execution + bug ID from output. Kimi reliable."
+    },
+    "data-engineer": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Data pipeline + DB schema impl."
+    },
+    "devops-engineer": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Deploy script, CI/CD config."
+    },
+    "sre": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Monitoring + reliability YAML."
+    },
+    "performance-engineer": {
+      "model": "opencode/kimi-k2.5-free",
+      "_note": "FREE — Profiling + bottleneck analysis."
+    },
+    "librarian": {
+      "model": "opencode/mimo-v2.5-free",
+      "_note": "FREE — 1M context untuk read banyak file sekaligus, hemat round-trip."
+    },
+    "task-runner": {
+      "model": "opencode/glm-4.7-free",
+      "_note": "FREE — GLM 4.7 bagus untuk single-tool atomic ops."
+    },
+    "init-project": {
+      "model": "opencode/glm-4.7-free",
+      "_note": "FREE — Scaffold via bash, simple tool use."
+    },
+    "tech-writer": {
+      "model": "opencode/deepseek-v4-flash-free",
+      "_note": "FREE LIGHTWEIGHT — DeepSeek bagus untuk doc writing dari code."
+    },
+    "chronicler": {
+      "model": "opencode/nemotron-3-super-free",
+      "_note": "FREE LIGHTWEIGHT — Nemotron untuk log events. Minimal reasoning."
+    },
+    "analyst": {
+      "model": "opencode/ling-2.6-flash-free",
+      "_note": "FREE LIGHTWEIGHT — Ling Flash untuk read DB query results."
+    },
+    "memory-keeper": {
+      "model": "opencode/mimo-v2-flash-free",
+      "_note": "FREE LIGHTWEIGHT — Mimo flash untuk observation save + tag mgmt."
+    }
+  }
+}

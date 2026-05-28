@@ -11,7 +11,7 @@ description: >-
   - user: "Integrate Stripe checkout into the app"
     → invoke integration-engineer for API key setup + webhook + UI flow.
 
-model: groq/llama-3.3-70b-versatile
+model: opencode/kimi-k2.5-free
 mode: subagent
 ---
 

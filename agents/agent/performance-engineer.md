@@ -11,7 +11,7 @@ description: >-
   - user: "Reduce JS bundle from 1.2MB to under 500KB"
     → invoke performance-engineer for bundle analysis + code splitting.
 
-model: groq/llama-3.3-70b-versatile
+model: opencode/kimi-k2.5-free
 mode: subagent
 ---
 

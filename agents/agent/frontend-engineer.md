@@ -10,7 +10,7 @@ description: >-
   - user: "Add dark mode toggle to the navbar"
     → invoke frontend-engineer to wire theme state + Tailwind class swap.
 
-model: groq/qwen-2.5-32b
+model: opencode/mimo-v2-pro-free
 mode: subagent
 ---
 

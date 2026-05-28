@@ -10,7 +10,7 @@ description: >-
   - user: "Add admin dashboard endpoint for daily attendance report"
     → invoke backend-engineer for SQL query + endpoint + response shape.
 
-model: groq/qwen-2.5-32b
+model: opencode/mimo-v2-pro-free
 mode: subagent
 ---
 
