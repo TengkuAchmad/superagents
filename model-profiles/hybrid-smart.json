@@ -1,10 +1,13 @@
 {
-  "$schema": "Hybrid: Claude Opus untuk agent yang berpikir berat (planning, audit, review), Claude Sonnet untuk yang sering dipanggil (orchestrator routing), Groq free tier untuk eksekusi. Filosofi: bayar mahal di tempat dimana kualitas reasoning paling berdampak (planning + review), gratis di tempat dimana clarity prompt sudah ditentukan thinker. Requires: Claude Max subscription + GROQ_API_KEY.",
+  "$schema": "Hybrid: Claude Opus untuk thinker, Sonnet untuk orchestrator, Groq free untuk doer, OpenRouter free sebagai fallback kalau Groq TPM habis. Requires: Claude Max + GROQ_API_KEY + OPENROUTER_API_KEY.",
   "default": {
     "model": "groq/llama-3.3-70b-versatile",
     "fallback_models": [
       { "model": "groq/qwen-2.5-32b" },
       { "model": "groq/gemma2-9b-it" },
+      { "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free" },
+      { "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct:free" },
+      { "model": "openrouter/openai/gpt-oss-120b:free" },
       { "model": "opencode/deepseek-v4-flash-free" }
     ]
   },
@@ -39,15 +42,29 @@
     },
     "frontend-engineer": {
       "model": "groq/qwen-2.5-32b",
-      "_note": "GROQ FREE — Coding specialist, free di Groq. Asumsi: prompt dari planner detail enough (file path, function signature, edge case). Qwen 32B handles React/TS/Three.js dengan baik kalau spec jelas."
+      "fallback_models": [
+        { "model": "openrouter/qwen/qwen3-coder:free" },
+        { "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct:free" },
+        { "model": "groq/llama-3.3-70b-versatile" }
+      ],
+      "_note": "Coding specialist. Qwen 32B (Groq, 6K TPM rentan kena) → Qwen3-Coder via OpenRouter (262K context, free) → llama 70B."
     },
     "backend-engineer": {
       "model": "groq/qwen-2.5-32b",
-      "_note": "GROQ FREE — API/DB implementation. Qwen 32B excels di server-side code."
+      "fallback_models": [
+        { "model": "openrouter/qwen/qwen3-coder:free" },
+        { "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct:free" },
+        { "model": "groq/llama-3.3-70b-versatile" }
+      ],
+      "_note": "Server-side coding. Same fallback chain as frontend."
     },
     "executor": {
       "model": "groq/qwen-2.5-32b",
-      "_note": "GROQ FREE — Generic code execution dari plan detail."
+      "fallback_models": [
+        { "model": "openrouter/qwen/qwen3-coder:free" },
+        { "model": "groq/llama-3.3-70b-versatile" }
+      ],
+      "_note": "Generic code execution."
     },
     "integration-engineer": {
       "model": "groq/llama-3.3-70b-versatile",

@@ -18,6 +18,11 @@
       "options": {
         "apiKey": "{env:GEMINI_API_KEY}"
       }
+    },
+    "openrouter": {
+      "options": {
+        "apiKey": "{env:OPENROUTER_API_KEY}"
+      }
     }
   },
   "mcp": {
