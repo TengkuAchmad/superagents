@@ -11,7 +11,7 @@ description: >-
   - user: "Document this API endpoint with examples"
     → invoke tech-writer for OpenAPI-style spec.
 
-model: github-copilot/claude-haiku-4.5
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

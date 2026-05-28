@@ -10,7 +10,7 @@ description: >-
   - user: "Add admin dashboard endpoint for daily attendance report"
     → invoke backend-engineer for SQL query + endpoint + response shape.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

@@ -11,7 +11,7 @@ description: >-
   - user: "Reduce JS bundle from 1.2MB to under 500KB"
     → invoke performance-engineer for bundle analysis + code splitting.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

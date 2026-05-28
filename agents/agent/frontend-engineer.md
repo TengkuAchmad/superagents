@@ -10,7 +10,7 @@ description: >-
   - user: "Add dark mode toggle to the navbar"
     → invoke frontend-engineer to wire theme state + Tailwind class swap.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

@@ -12,7 +12,7 @@ description: >-
   - user: "We had an outage at 2am — write the post-mortem"
     → invoke sre to structure timeline + root cause + action items.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

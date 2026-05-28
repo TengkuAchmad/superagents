@@ -15,7 +15,7 @@ description: >-
     → invoke business-analyst to define which features (contacts? deals? notes?),
       team size, integrations, MVP scope.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

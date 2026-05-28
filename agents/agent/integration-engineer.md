@@ -11,7 +11,7 @@ description: >-
   - user: "Integrate Stripe checkout into the app"
     → invoke integration-engineer for API key setup + webhook + UI flow.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

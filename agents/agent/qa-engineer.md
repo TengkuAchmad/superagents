@@ -12,7 +12,7 @@ description: >-
   - user: "Smoke test the whole user flow before we deploy"
     → invoke qa-engineer for end-to-end manual test plan.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

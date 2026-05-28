@@ -11,7 +11,7 @@ description: >-
   - user: "Containerize the backend with Docker"
     → invoke devops-engineer for Dockerfile + compose.yml + .dockerignore.
 
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

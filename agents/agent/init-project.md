@@ -16,7 +16,7 @@ description: >-
     Agent extracts project metadata, tech stack, conventions, and stores them so all agents can query efficiently.
     </commentary>
 mode: primary
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 ---
 
 # Init Project � Context Registration Agent

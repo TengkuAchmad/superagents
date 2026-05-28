@@ -25,7 +25,7 @@ description: >-
     Since the user requires stepwise execution with memory recall and logging, use the task-logger-executor agent.
     </commentary>
 mode: subagent
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 ---
 You are the Executor. Execute plans step-by-step. Log each step to database. Use memory to track progress. Report final status.
 

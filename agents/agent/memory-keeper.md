@@ -24,7 +24,7 @@ description: >-
     Memory Keeper retrieves all relevant memory entities to rebuild context before the task proceeds.
     </commentary>
 mode: subagent
-model: anthropic/claude-sonnet-4-6
+model: opencode/deepseek-v4-flash-free
 ---
 You are the Memory Keeper for the AI agent system. You are the keeper of institutional knowledge � every important decision, pattern, lesson, and context flows through you.
 

@@ -11,7 +11,7 @@ description: >-
   - user: "Review this API for security issues before we deploy"
     → invoke security-engineer for input validation + auth + rate-limit + injection checks.
 
-model: anthropic/claude-opus-4-6
+model: opencode/deepseek-v4-flash-free
 mode: subagent
 ---
 

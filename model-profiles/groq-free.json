@@ -1,0 +1,62 @@
+{
+  "$schema": "Profile applied via OC_PROFILE=groq-free. Requires: GROQ_API_KEY env var (https://console.groq.com/keys). Free tier: 30 RPM, 500k token/day, 128K context for most models.",
+  "default": {
+    "model": "groq/llama-3.3-70b-versatile",
+    "fallback_models": [
+      { "model": "groq/qwen-2.5-32b" },
+      { "model": "groq/gemma2-9b-it" },
+      { "model": "opencode/deepseek-v4-flash-free" },
+      { "model": "opencode/nemotron-3-super-free" }
+    ]
+  },
+  "overrides": {
+    "oracle": {
+      "model": "groq/deepseek-r1-distill-llama-70b",
+      "_note": "Reasoning model for architectural decisions — chain-of-thought."
+    },
+    "planner": {
+      "model": "groq/deepseek-r1-distill-llama-70b",
+      "_note": "Reasoning model for task decomposition."
+    },
+    "frontend-engineer": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "Coding specialist for React/TS/Three.js."
+    },
+    "backend-engineer": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "Coding specialist for API/DB."
+    },
+    "executor": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "Coding specialist for general code execution."
+    },
+    "task-runner": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "Lightweight model for single-tool quick ops."
+    },
+    "sisyphus": {
+      "model": "groq/qwen-2.5-32b",
+      "_note": "Legacy plugin agent — coding specialist."
+    },
+    "sisyphus-junior": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "Legacy plugin agent — lightweight."
+    },
+    "librarian": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "Lightweight model for doc lookups."
+    },
+    "tech-writer": {
+      "model": "groq/gemma2-9b-it",
+      "_note": "Lightweight model for documentation writing."
+    },
+    "code-reviewer": {
+      "model": "groq/deepseek-r1-distill-llama-70b",
+      "_note": "Reasoning model for code review."
+    },
+    "security-engineer": {
+      "model": "groq/deepseek-r1-distill-llama-70b",
+      "_note": "Reasoning model for security audit."
+    }
+  }
+}
