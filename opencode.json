@@ -65,7 +65,8 @@
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "/Users/masjayz/.config/opencode",
-        "/Users/masjayz/projects"
+        "/Users/masjayz/projects",
+        "/Users/masjayz/Documents/Projects"
       ]
     },
     "context7": {
@@ -85,6 +86,21 @@
         "npx",
         "-y",
         "@playwright/mcp"
+      ]
+    },
+    "browser-tools": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@agentdeskai/browser-tools-mcp@latest"
+      ]
+    },
+    "fetch": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "mcp-server-fetch"
       ]
     }
   }
