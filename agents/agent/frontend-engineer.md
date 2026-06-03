@@ -10,7 +10,7 @@ description: >-
   - user: "Add dark mode toggle to the navbar"
     → invoke frontend-engineer to wire theme state + Tailwind class swap.
 
-model: opencode/mimo-v2-pro-free
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

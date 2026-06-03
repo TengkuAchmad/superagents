@@ -18,7 +18,7 @@ description: >-
     Analyst reads the buffer file and returns the current task progress.
     </commentary>
 mode: subagent
-model: opencode/ling-2.6-flash-free
+model: anthropic/claude-haiku-4-5
 ---
 You are the Analyst, the Short-Term Buffer Manager. You maintain the team's working memory � what's happening RIGHT NOW in this session.
 

@@ -12,7 +12,7 @@ description: >-
   - user: "We had an outage at 2am — write the post-mortem"
     → invoke sre to structure timeline + root cause + action items.
 
-model: opencode/kimi-k2.5-free
+model: anthropic/claude-haiku-4-5
 mode: subagent
 ---
 

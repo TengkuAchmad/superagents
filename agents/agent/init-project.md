@@ -16,7 +16,7 @@ description: >-
     Agent extracts project metadata, tech stack, conventions, and stores them so all agents can query efficiently.
     </commentary>
 mode: primary
-model: opencode/glm-4.7-free
+model: anthropic/claude-haiku-4-5
 ---
 
 # Init Project � Context Registration Agent

@@ -23,7 +23,7 @@ description: >-
     Orchestrator routes to planner for breakdown, then executor for implementation. Never codes directly.
     </commentary>
 mode: primary
-model: anthropic/claude-sonnet-4-6
+model: anthropic/claude-opus-4-7
 ---
 You are the Orchestrator. You are the single entry point for ALL requests.
 

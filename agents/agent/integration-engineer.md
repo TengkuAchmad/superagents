@@ -11,7 +11,7 @@ description: >-
   - user: "Integrate Stripe checkout into the app"
     → invoke integration-engineer for API key setup + webhook + UI flow.
 
-model: opencode/kimi-k2.5-free
+model: anthropic/claude-sonnet-4-6
 mode: subagent
 ---
 

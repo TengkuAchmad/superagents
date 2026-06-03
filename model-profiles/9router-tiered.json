@@ -1,0 +1,124 @@
+{
+  "$schema": "Profile khusus 9router (Claude Max via http://127.0.0.1:3456). Pakai 4 tier Claude: Opus 4.7 untuk decision tertinggi, Opus 4.6 untuk thinker, Sonnet 4.6 untuk doer reasoning-sedang, Haiku 4.5 untuk operasi ringan. Single-provider (semua via 9router), tidak butuh API key external. Requires: Claude Max subscription aktif + 9router proxy running di port 3456 (auto-spawned oleh opencode-with-claude plugin).",
+  "default": {
+    "model": "anthropic/claude-sonnet-4-6",
+    "fallback_models": [
+      { "model": "anthropic/claude-haiku-4-5" },
+      { "model": "anthropic/claude-opus-4-6" }
+    ]
+  },
+  "overrides": {
+    "orchestrator": {
+      "model": "anthropic/claude-opus-4-7",
+      "fallback_models": [
+        { "model": "anthropic/claude-opus-4-6" },
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 1 OPUS 4.7 — Routing decision punya leverage tertinggi (1 keputusan salah = 10 sub-agent wasted). Latest Opus, 1M context untuk swallow seluruh project history."
+    },
+    "oracle": {
+      "model": "anthropic/claude-opus-4-7",
+      "fallback_models": [
+        { "model": "anthropic/claude-opus-4-6" },
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 1 OPUS 4.7 — Architectural decisions tahan bertahun-tahun. 1M context untuk audit cross-codebase pattern sekaligus."
+    },
+    "planner": {
+      "model": "anthropic/claude-opus-4-6",
+      "fallback_models": [
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 2 OPUS 4.6 — Task decomposition quality menentukan eksekusi downstream. Detail spec dari Opus = sub-agent cheap bisa execute."
+    },
+    "business-analyst": {
+      "model": "anthropic/claude-opus-4-6",
+      "fallback_models": [
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 2 OPUS 4.6 — PRD + edge case discovery butuh deep reasoning."
+    },
+    "code-reviewer": {
+      "model": "anthropic/claude-opus-4-6",
+      "fallback_models": [
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 2 OPUS 4.6 — Finding subtle bug (race, leak, security) = kemampuan utama Opus."
+    },
+    "security-engineer": {
+      "model": "anthropic/claude-opus-4-6",
+      "fallback_models": [
+        { "model": "anthropic/claude-sonnet-4-6" }
+      ],
+      "_note": "TIER 2 OPUS 4.6 — Adversarial threat modeling. Cost satu CVE jauh lebih mahal dari Opus call."
+    },
+    "ui-designer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — Design spec writing, taste + struktur, Sonnet capable."
+    },
+    "integration-engineer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — Cross-module wiring, butuh paham multiple context."
+    },
+    "frontend-engineer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — React/TS/Three.js implementation. Sonnet excels di TS strict + complex JSX."
+    },
+    "backend-engineer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — API/DB/middleware. Sonnet handle Express + better-sqlite3 + Zod patterns dengan baik."
+    },
+    "executor": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — Generic code execution dari detail plan."
+    },
+    "qa-engineer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — Test execution + bug identification dari output. Tool-use heavy (playwright/browser-tools)."
+    },
+    "data-engineer": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "_note": "TIER 3 SONNET — Data pipeline + schema design."
+    },
+    "tech-writer": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Doc writing dari code, formulaic. Cepat + hemat quota."
+    },
+    "librarian": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — File reads + grep + multi-source bundling. 200K context cukup untuk batched reads."
+    },
+    "task-runner": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Atomic single-tool ops. Haiku reliable untuk tool use."
+    },
+    "init-project": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — npm create + scaffolding. Bash-heavy, deterministic."
+    },
+    "chronicler": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Log events ke memory. Minimal reasoning."
+    },
+    "analyst": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Read DB query results, simple summary."
+    },
+    "memory-keeper": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Save observation + tag mgmt."
+    },
+    "devops-engineer": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Deploy script + CI/CD YAML, pattern-based."
+    },
+    "sre": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Monitoring + reliability config."
+    },
+    "performance-engineer": {
+      "model": "anthropic/claude-haiku-4-5",
+      "_note": "TIER 4 HAIKU — Profiling output analysis."
+    }
+  }
+}
